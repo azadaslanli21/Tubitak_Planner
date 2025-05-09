@@ -10,7 +10,7 @@ export class Task extends Component {
   }
 
   refreshList() {
-    fetch(process.env.REACT_APP_API + 'task')
+    fetch(process.env.REACT_APP_API + 'tasks')
       .then(response => response.json())
       .then(data => this.setState({ tasks: data }));
   }
@@ -27,7 +27,7 @@ export class Task extends Component {
 
   deleteTask(taskId) {
     if (window.confirm('Are you sure?')) {
-      fetch(process.env.REACT_APP_API + 'task/' + taskId, {
+      fetch(process.env.REACT_APP_API + 'tasks/' + taskId, {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json',

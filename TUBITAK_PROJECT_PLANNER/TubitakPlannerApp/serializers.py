@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from TubitakProjectApp.models import User, WorkPackage, Task
+from TubitakPlannerApp.models import User, WorkPackage, Task
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
