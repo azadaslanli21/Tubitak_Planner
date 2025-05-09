@@ -40,7 +40,7 @@ npm start
 
 ---
 
-## 📁 Project Structure Overview
+## Project Structure Overview
 
 ### Backend (Django)
 
@@ -73,7 +73,7 @@ npm start
 
 ---
 
-## ✅ Notes
+## Notes
 
 - PLS check for urls in backend part before adding smth related with it
 - CORS must be properly configured in Django for frontend-backend communication.
