@@ -19,9 +19,9 @@ export class AddWorkPackageModal extends Component {
         const selectedUserNames = Array.from(event.target.users.selectedOptions, option => option.value);
         const selectedUserIds = this.state.users
             .filter(user => selectedUserNames.includes(user.name))
-            .map(user => user.userID);
+            .map(user => user.id);
 
-        fetch(process.env.REACT_APP_API + 'workpackages', {
+        fetch(process.env.REACT_APP_API + 'workpackages/', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',

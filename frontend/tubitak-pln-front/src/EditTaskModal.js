@@ -25,7 +25,7 @@ export class EditTaskModal extends Component {
     const form = event.target;
     const selectedUsers = Array.from(form.users.selectedOptions).map(opt => opt.value);
 
-    fetch(process.env.REACT_APP_API + 'task', {
+    fetch(process.env.REACT_APP_API + 'task/', {
       method: 'PUT',
       headers: {
         'Accept': 'application/json',

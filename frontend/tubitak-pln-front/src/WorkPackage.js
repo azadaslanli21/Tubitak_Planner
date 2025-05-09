@@ -49,8 +49,8 @@ export class WorkPackage extends Component {
                     </thead>
                     <tbody>
                         {wps.map(wp =>
-                            <tr key={wp.wpId}>
-                                <td>{wp.wpId}</td>
+                            <tr key={wp.id}>
+                                <td>{wp.id}</td>
                                 <td>{wp.name}</td>
                                 <td>{wp.description}</td>
                                 <td>{wp.start_date}</td>
@@ -62,7 +62,7 @@ export class WorkPackage extends Component {
                                         <Button className="mr-2" variant="info"
                                             onClick={() => this.setState({
                                                 editModalShow: true,
-                                                wpid: wp.wpId,
+                                                wpid: wp.id,
                                                 name: wp.name,
                                                 description: wp.description,
                                                 start_date: wp.start_date,
@@ -73,7 +73,7 @@ export class WorkPackage extends Component {
                                             Edit
                                         </Button>
                                         <Button className="mr-2" variant="danger"
-                                            onClick={() => this.deleteWP(wp.wpId)}>
+                                            onClick={() => this.deleteWP(wp.id)}>
                                             Delete
                                         </Button>
                                     </ButtonToolbar>
@@ -107,7 +107,7 @@ export class WorkPackage extends Component {
             .then(res => res.json())
             .then(users => {
                 let map = {};
-                users.forEach(u => map[u.userID] = u.name);
+                users.forEach(u => map[u.id] = u.name);
                 this.setState({ userMap: map });
             });
     }

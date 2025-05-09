@@ -21,7 +21,7 @@ export class EditWorkPackageModal extends Component {
             .filter(user => selectedUserNames.includes(user.name))
             .map(user => user.userID);
 
-        fetch(process.env.REACT_APP_API + 'workpackages', {
+        fetch(process.env.REACT_APP_API + 'workpackages/', {
             method: 'PUT',
             headers: {
                 'Accept': 'application/json',
