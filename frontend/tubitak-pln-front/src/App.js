@@ -6,6 +6,7 @@ import { User } from './User';
 import { WorkPackage } from './WorkPackage';
 import { Task } from './Task';
 import { Navigation } from './Navigation';
+import { GanttChartPage } from './GanttChartPage';
 
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
@@ -24,6 +25,7 @@ function App() {
           <Route path="/user" element={<User />} />
           <Route path="/workpackage" element={<WorkPackage />} />
           <Route path="/task" element={<Task />} />
+          <Route path="/gantt" element={<GanttChartPage />} />
         </Routes>
       </div>
     </BrowserRouter>

@@ -77,12 +77,12 @@ export class EditTaskModal extends Component {
                 </Form.Group>
 
                 <Form.Group controlId="start_date">
-                  <Form.Label>Start Week</Form.Label>
+                  <Form.Label>Start Month</Form.Label>
                   <Form.Control type="number" required defaultValue={this.props.start_date} />
                 </Form.Group>
 
                 <Form.Group controlId="end_date">
-                  <Form.Label>End Week</Form.Label>
+                  <Form.Label>End Month</Form.Label>
                   <Form.Control type="number" required defaultValue={this.props.end_date} />
                 </Form.Group>
 

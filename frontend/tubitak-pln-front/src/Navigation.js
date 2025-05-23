@@ -22,6 +22,9 @@ export class Navigation extends Component{
                 <NavLink className="d-inline p-2 bg-dark text-white" to="/task">
                     Task
                 </NavLink>
+                <NavLink className="d-inline p-2 bg-dark text-white" to="/gantt">
+                    Gantt Chart
+                </NavLink>                
 
                 </Nav>
                 </Navbar.Collapse>

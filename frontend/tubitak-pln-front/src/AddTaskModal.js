@@ -70,13 +70,13 @@ export class AddTaskModal extends Component {
                 </Form.Group>
 
                 <Form.Group controlId="start_date">
-                  <Form.Label>Start Week</Form.Label>
-                  <Form.Control type="number" required placeholder="Start Week" />
+                  <Form.Label>Start Month</Form.Label>
+                  <Form.Control type="number" required placeholder="Start Month" />
                 </Form.Group>
 
                 <Form.Group controlId="end_date">
-                  <Form.Label>End Week</Form.Label>
-                  <Form.Control type="number" required placeholder="End Week" />
+                  <Form.Label>End Month</Form.Label>
+                  <Form.Control type="number" required placeholder="End Month" />
                 </Form.Group>
 
                 <Form.Group controlId="status">
