@@ -21,7 +21,7 @@ export class BudgetPage extends Component {
       contrib: {},
       maxMonth: 0,
       showAlert: null,       // validation messages
-      totals: null           // {userTotals, grandTotal}
+      totals: null           // { userTotals, wpTotals, monthTotals, grandTotal }
     };
   }
 
@@ -49,7 +49,7 @@ export class BudgetPage extends Component {
     const temp = { ...contrib, [newKey]: num };
 
     const monthlySum = Object.entries(temp)
-      .filter(([k, v]) => k.endsWith(`_${userId}_${month}`))
+      .filter(([k]) => k.endsWith(`_${userId}_${month}`))
       .reduce((s, [, v]) => s + v, 0);
 
     if (monthlySum > 1) {
@@ -62,16 +62,22 @@ export class BudgetPage extends Component {
 
   calculateTotals = () => {
     const { contrib, users } = this.state;
-    const userTotals = {}; // userId -> total money
+    const userTotals = {};  // userId -> total money
+    const wpTotals   = {};  // wpId   -> total money
+    const monthTotals = {}; // month  -> total money
 
     Object.entries(contrib).forEach(([key, value]) => {
-      const [, userId] = key.split('_');
+      const [wpId, userId, month] = key.split('_');
       const wage = users.find(u => u.id === parseInt(userId))?.wage || 0;
-      userTotals[userId] = (userTotals[userId] || 0) + value * wage;
+      const amount = value * wage;
+
+      userTotals[userId] = (userTotals[userId] || 0) + amount;
+      wpTotals[wpId]     = (wpTotals[wpId] || 0) + amount;
+      monthTotals[month] = (monthTotals[month] || 0) + amount;
     });
 
     const grandTotal = Object.values(userTotals).reduce((s, v) => s + v, 0);
-    this.setState({ totals: { userTotals, grandTotal } });
+    this.setState({ totals: { userTotals, wpTotals, monthTotals, grandTotal } });
   };
 
   /* ----------------------- rendering -------------------------- */
@@ -156,6 +162,7 @@ export class BudgetPage extends Component {
 
         {totals && (
           <>
+            {/* ---------- User totals ---------- */}
             <h4>User Totals</h4>
             <Table bordered size="sm">
               <thead>
@@ -173,6 +180,48 @@ export class BudgetPage extends Component {
                 ))}
               </tbody>
             </Table>
+
+            {/* ---------- WorkPackage totals ---------- */}
+            <h4>WorkPackage Totals</h4>
+            <Table bordered size="sm">
+              <thead>
+                <tr>
+                  <th>WorkPackage</th>
+                  <th>Total Budget</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(totals.wpTotals).map(([wpid, val]) => {
+                  const wp = workPackages.find(w => w.id.toString() === wpid);
+                  return (
+                    <tr key={wpid}>
+                      <td>{wp?.name || wpid}</td>
+                      <td>{val.toFixed(2)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+
+            {/* ---------- Month totals ---------- */}
+            <h4>Month Totals</h4>
+            <Table bordered size="sm">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Total Budget</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(totals.monthTotals).map(([m, val]) => (
+                  <tr key={m}>
+                    <td>{projectStart ? dayjs(projectStart).add(parseInt(m) - 1, 'month').format('MMM YY') : m}</td>
+                    <td>{val.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+
             <h5>Total Project Budget: {totals.grandTotal.toFixed(2)}</h5>
           </>
         )}
