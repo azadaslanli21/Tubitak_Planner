@@ -7,6 +7,7 @@ import { WorkPackage } from './WorkPackage';
 import { Task } from './Task';
 import { Navigation } from './Navigation';
 import { GanttChartPage } from './GanttChartPage';
+import { BudgetPage } from './BudgetPage';
 
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
@@ -26,6 +27,7 @@ function App() {
           <Route path="/workpackage" element={<WorkPackage />} />
           <Route path="/task" element={<Task />} />
           <Route path="/gantt" element={<GanttChartPage />} />
+          <Route path="/budget" element={<BudgetPage />} />
         </Routes>
       </div>
     </BrowserRouter>

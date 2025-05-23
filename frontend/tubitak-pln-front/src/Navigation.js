@@ -24,8 +24,10 @@ export class Navigation extends Component{
                 </NavLink>
                 <NavLink className="d-inline p-2 bg-dark text-white" to="/gantt">
                     Gantt Chart
-                </NavLink>                
-
+                </NavLink>         
+                <NavLink className="d-inline p-2 bg-dark text-white" to="/budget">
+                    Budget Table
+                </NavLink> 
                 </Nav>
                 </Navbar.Collapse>
             </Navbar>
