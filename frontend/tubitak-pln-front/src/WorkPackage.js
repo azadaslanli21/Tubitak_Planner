@@ -27,7 +27,7 @@ export class WorkPackage extends Component {
 
     deleteWP(id) {
         if (window.confirm('Are you sure?')) {
-            fetch(process.env.REACT_APP_API + 'workpackages/' + id, {
+            fetch(process.env.REACT_APP_API + 'workpackages/' + id + "/", {
                 method: 'DELETE',
                 headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
             }).then(() => this.refreshList());

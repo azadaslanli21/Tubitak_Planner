@@ -16,19 +16,19 @@ export class EditWorkPackageModal extends Component {
 
     handleSubmit(event) {
         event.preventDefault();
+
         const selectedUserNames = Array.from(event.target.users.selectedOptions, option => option.value);
         const selectedUserIds = this.state.users
             .filter(user => selectedUserNames.includes(user.name))
-            .map(user => user.userID);
+            .map(user => user.id);
 
-        fetch(process.env.REACT_APP_API + 'workpackages/', {
+        fetch(process.env.REACT_APP_API + 'workpackages/' + this.props.wpid + '/', {
             method: 'PUT',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                wpId: this.props.wpid,
                 name: event.target.name.value,
                 description: event.target.description.value,
                 start_date: parseInt(event.target.start_date.value),
@@ -38,7 +38,10 @@ export class EditWorkPackageModal extends Component {
             })
         })
             .then(res => res.json())
-            .then(result => alert(result), error => alert('Failed'));
+            .then(
+                result => alert(result),
+                error => alert('Failed')
+            );
     }
 
     render() {
@@ -52,9 +55,15 @@ export class EditWorkPackageModal extends Component {
                         <Row>
                             <Col sm={6}>
                                 <Form onSubmit={this.handleSubmit}>
-                                    <Form.Group controlId="wpId">
+                                    <Form.Group controlId="wpid">
                                         <Form.Label>WP ID</Form.Label>
-                                        <Form.Control type="text" disabled defaultValue={this.props.wpid} />
+                                        <Form.Control
+                                            type="text"
+                                            value={this.props.wpid}
+                                            disabled // disables editing
+                                            plaintext // optionally makes it look like text
+                                            readOnly // ensures no editing possible
+                                        />
                                     </Form.Group>
 
                                     <Form.Group controlId="name">
@@ -87,10 +96,9 @@ export class EditWorkPackageModal extends Component {
 
                                     <Form.Group controlId="users">
                                         <Form.Label>Users</Form.Label>
-                                        <Form.Control as="select" multiple>
+                                        <Form.Control as="select" multiple defaultValue={this.props.usernames}>
                                             {this.state.users.map(user =>
-                                                <option key={user.userID}
-                                                    selected={this.props.usernames.includes(user.name)}>
+                                                <option key={user.id} value={user.name}>
                                                     {user.name}
                                                 </option>
                                             )}

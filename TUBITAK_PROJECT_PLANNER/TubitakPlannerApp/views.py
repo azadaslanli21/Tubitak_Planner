@@ -144,8 +144,8 @@ def taskApi(request, id=0):
             return JsonResponse("WorkPackage not found.", status=404, safe=False)
 
         # Check if task's start and end weeks fall within the work package's start and end weeks
-        task_start_week = int(task_data['start_week'])
-        task_end_week = int(task_data['end_week'])
+        task_start_week = int(task_data['start_date'])
+        task_end_week = int(task_data['end_date'])
         wp_start_week = work_package.start_date
         wp_end_week = work_package.end_date
 
@@ -184,8 +184,8 @@ def taskApi(request, id=0):
             return JsonResponse("WorkPackage not found.", status=404, safe=False)
 
         # Check if task's start and end weeks fall within the work package's start and end weeks
-        task_start_week = int(task_data['start_week'])
-        task_end_week = int(task_data['end_week'])
+        task_start_week = int(task_data['start_date'])
+        task_end_week = int(task_data['end_date'])
         wp_start_week = work_package.start_date
         wp_end_week = work_package.end_date
 
