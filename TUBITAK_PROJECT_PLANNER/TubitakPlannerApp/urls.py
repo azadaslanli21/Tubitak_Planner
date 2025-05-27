@@ -29,5 +29,9 @@ urlpatterns = [
     # Task API endpoints
     path('tasks/', views.taskApi),  # GET all tasks, POST to create a task
     path('tasks/<int:id>/', views.taskApi),  # GET, PUT, DELETE specific task by id
+    
+    path('project/', views.projectApi),
+    path('tasks/<int:id>/', views.projectApi),  # GET, PUT, DELETE specific task by id
+
 ]
 

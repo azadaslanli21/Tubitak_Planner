@@ -1,8 +1,3 @@
-// BudgetPage.js – interactive budget worksheet
-// --------------------------------------------------------------
-// Requirements:
-//   npm i dayjs react-bootstrap
-// --------------------------------------------------------------
 import React, { Component } from 'react';
 import { Container, Table, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import dayjs from 'dayjs';
@@ -17,23 +12,29 @@ export class BudgetPage extends Component {
       projectStart: '',      // ISO date string (needed for calendar labels)
       workPackages: [],      // fetched
       users: [],             // fetched (with wage)
-      // contributions: { [wpId_userId_month]: number }
       contrib: {},
       maxMonth: 0,
-      showAlert: null,       // validation messages
-      totals: null           // { userTotals, wpTotals, monthTotals, grandTotal }
+      showAlert: null,
+      totals: null
     };
   }
 
   /* ----------------------- data loading ----------------------- */
   componentDidMount() {
-    Promise.all([
-      fetch(process.env.REACT_APP_API + 'workpackages').then(r => r.json()),
-      fetch(process.env.REACT_APP_API + 'users').then(r => r.json())
-    ]).then(([wps, users]) => {
-      const maxMonth = wps.reduce((m, wp) => Math.max(m, wp.end_date), 0);
-      this.setState({ workPackages: wps, users, maxMonth });
-    });
+    // 1️⃣ fetch project → then WP + users
+    fetch(process.env.REACT_APP_API + 'project/')
+      .then(r => r.ok ? r.json() : Promise.resolve({ start_date: '' }))
+      .then(project => {
+        this.setState({ projectStart: project.start_date });
+        return Promise.all([
+          fetch(process.env.REACT_APP_API + 'workpackages').then(r => r.json()),
+          fetch(process.env.REACT_APP_API + 'users').then(r => r.json())
+        ]);
+      })
+      .then(([wps, users]) => {
+        const maxMonth = wps.reduce((m, wp) => Math.max(m, wp.end_date), 0);
+        this.setState({ workPackages: wps, users, maxMonth });
+      });
   }
 
   /* ----------------------- helpers ---------------------------- */
@@ -41,9 +42,8 @@ export class BudgetPage extends Component {
 
   handleChange = (wpId, userId, month, value) => {
     const num = parseFloat(value);
-    if (isNaN(num) || num < 0 || num > 1) return; // simple validation
+    if (isNaN(num) || num < 0 || num > 1) return;
 
-    // Compute new total for this user & month across all WPs
     const { contrib } = this.state;
     const newKey = this.key(wpId, userId, month);
     const temp = { ...contrib, [newKey]: num };
@@ -62,9 +62,9 @@ export class BudgetPage extends Component {
 
   calculateTotals = () => {
     const { contrib, users } = this.state;
-    const userTotals = {};  // userId -> total money
-    const wpTotals   = {};  // wpId   -> total money
-    const monthTotals = {}; // month  -> total money
+    const userTotals = {};
+    const wpTotals   = {};
+    const monthTotals = {};
 
     Object.entries(contrib).forEach(([key, value]) => {
       const [wpId, userId, month] = key.split('_');
@@ -103,16 +103,12 @@ export class BudgetPage extends Component {
 
     return (
       <Container fluid className="mt-4">
-        {/* Project start date for column labels */}
+        {/* Project start date display (read-only) */}
         <Row className="mb-3">
           <Col sm={4}>
-            <Form.Group controlId="projectStart">
+            <Form.Group>
               <Form.Label>Project Start Date:</Form.Label>
-              <Form.Control
-                type="date"
-                value={projectStart}
-                onChange={e => this.setState({ projectStart: e.target.value })}
-              />
+              <Form.Control type="text" readOnly value={projectStart || '—'} />
             </Form.Group>
           </Col>
         </Row>
@@ -162,7 +158,6 @@ export class BudgetPage extends Component {
 
         {totals && (
           <>
-            {/* ---------- User totals ---------- */}
             <h4>User Totals</h4>
             <Table bordered size="sm">
               <thead>
@@ -181,7 +176,6 @@ export class BudgetPage extends Component {
               </tbody>
             </Table>
 
-            {/* ---------- WorkPackage totals ---------- */}
             <h4>WorkPackage Totals</h4>
             <Table bordered size="sm">
               <thead>
@@ -203,7 +197,6 @@ export class BudgetPage extends Component {
               </tbody>
             </Table>
 
-            {/* ---------- Month totals ---------- */}
             <h4>Month Totals</h4>
             <Table bordered size="sm">
               <thead>
@@ -226,7 +219,6 @@ export class BudgetPage extends Component {
           </>
         )}
 
-        {/* Basic styling */}
         <style>{`
           .budget-table input {
             width: 70px;

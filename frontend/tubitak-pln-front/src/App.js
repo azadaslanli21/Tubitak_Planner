@@ -1,7 +1,7 @@
 import logo from './logo.svg';
 import './App.css';
 
-import { Home } from './HomePage';
+import HomePage from './HomePage';
 import { User } from './User';
 import { WorkPackage } from './WorkPackage';
 import { Task } from './Task';
@@ -22,7 +22,7 @@ function App() {
         <Navigation />
 
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<HomePage />} />
           <Route path="/user" element={<User />} />
           <Route path="/workpackage" element={<WorkPackage />} />
           <Route path="/task" element={<Task />} />

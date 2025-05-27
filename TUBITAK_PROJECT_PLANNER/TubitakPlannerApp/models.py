@@ -51,4 +51,16 @@ class Task(models.Model):
     def __str__(self):
         return self.name
 
+
+class Project(models.Model):
+    """
+    A single-row table holding the active project’s basic info.
+    You’ll only ever have id=1, but keeping an ID makes life easy.
+    """
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    start_date = models.DateField()
+
+    def __str__(self):
+        return self.name
     

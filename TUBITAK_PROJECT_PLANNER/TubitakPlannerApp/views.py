@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from rest_framework.parsers import JSONParser
-from .models import User, WorkPackage, Task
-from .serializers import UserSerializer, WorkPackageSerializer, TaskSerializer
+from .models import User, WorkPackage, Task, Project
+from .serializers import UserSerializer, WorkPackageSerializer, TaskSerializer, ProjectSerializer
 from django.views.decorators.csrf import csrf_exempt
 
 # User API View
@@ -213,3 +213,36 @@ def taskApi(request, id=0):
             return JsonResponse("Task deleted successfully!", safe=False)
         except Task.DoesNotExist:
             return JsonResponse("Task not found.", status=404, safe=False)
+
+
+@csrf_exempt
+def projectApi(request):
+    """
+    GET    → returns the single project (404 if none yet)
+    POST   → create if none exists
+    PUT    → update the existing one
+    """
+    if request.method == 'GET':
+        try:
+            proj = Project.objects.get(pk=1)
+            return JsonResponse(ProjectSerializer(proj).data, safe=False)
+        except Project.DoesNotExist:
+            return JsonResponse({"detail": "No project set."}, status=404)
+
+    data = JSONParser().parse(request)
+
+    if request.method == 'POST':            # create once
+        if Project.objects.exists():
+            return JsonResponse("Project already exists.", status=400, safe=False)
+        ser = ProjectSerializer(data=data)
+        return JsonResponse(ser.data, safe=False) if ser.is_valid() and (ser.save() or True) \
+               else JsonResponse(ser.errors, status=400, safe=False)
+
+    if request.method == 'PUT':             # update
+        try:
+            proj = Project.objects.get(pk=1)
+        except Project.DoesNotExist:
+            return JsonResponse("Project not found.", status=404, safe=False)
+        ser = ProjectSerializer(proj, data=data)
+        return JsonResponse("Updated!", safe=False) if ser.is_valid() and (ser.save() or True) \
+               else JsonResponse(ser.errors, status=400, safe=False)
