@@ -31,7 +31,9 @@ urlpatterns = [
     path('tasks/<int:id>/', views.taskApi),  # GET, PUT, DELETE specific task by id
     
     path('project/', views.projectApi),
-    path('tasks/<int:id>/', views.projectApi),  # GET, PUT, DELETE specific task by id
+    path('project/<int:id>/', views.projectApi),  # GET, PUT, DELETE specific project by id
 
+    path('deliverables/', views.deliverableApi),
+    path('deliverables/<int:id>', views.deliverableApi)
 ]
 

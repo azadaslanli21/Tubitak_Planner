@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from rest_framework.parsers import JSONParser
-from .models import User, WorkPackage, Task, Project
-from .serializers import UserSerializer, WorkPackageSerializer, TaskSerializer, ProjectSerializer
+from .models import User, WorkPackage, Task, Project, Deliverable
+from .serializers import UserSerializer, WorkPackageSerializer, TaskSerializer, ProjectSerializer, DeliverableSerializer
 from django.views.decorators.csrf import csrf_exempt
 
 # User API View
@@ -246,3 +246,84 @@ def projectApi(request):
         ser = ProjectSerializer(proj, data=data)
         return JsonResponse("Updated!", safe=False) if ser.is_valid() and (ser.save() or True) \
                else JsonResponse(ser.errors, status=400, safe=False)
+               
+               
+# Delvierable API View
+@csrf_exempt
+def deliverableApi(request, id=0):
+    if request.method == 'GET':
+        if id == 0:
+            deliverables = Deliverable.objects.all()
+            deliverable_serializer = DeliverableSerializer(deliverables, many=True)
+            return JsonResponse(deliverable_serializer.data, safe=False)
+        else:
+            try:
+                deliverable = Deliverable.objects.get(id=id)
+                deliverable_serializer = DeliverableSerializer(deliverable)
+                return JsonResponse(deliverable_serializer.data)
+            except Deliverable.DoesNotExist:
+                return JsonResponse("Deliverable not found.", status=404, safe=False)
+
+    elif request.method == 'POST':
+        deliverable_data = JSONParser().parse(request)
+        
+        # Validate the work package
+        try:
+            work_package = WorkPackage.objects.get(id=deliverable_data['work_package'])
+        except WorkPackage.DoesNotExist:
+            return JsonResponse("WorkPackage not found.", status=404, safe=False)
+
+        # Check if deliverable's deadline fall within the work package's start and end months
+        deliverable_deadline = int(deliverable_data['deadline'])
+        wp_start_month = work_package.start_date
+        wp_end_month = work_package.end_date
+
+        if deliverable_deadline< wp_start_month or deliverable_deadline > wp_end_month:
+            return JsonResponse("Deliverable deadline cannot exceed WorkPackage months.", status=400, safe=False)
+
+        
+        # Serialize and save the Deliverable
+        deliverable = DeliverableSerializer(data=deliverable_data)
+        if deliverable_serializer.is_valid():
+            deliverable = deliverable_serializer.save()
+            deliverable.work_package = work_package  # Assign the deliverable to the WorkPackage
+            deliverable.save()  # Save the changes
+            return JsonResponse("Deliverable added successfully!", safe=False)
+        return JsonResponse("Failed to add deliverable.", status=400, safe=False)
+
+    elif request.method == 'PUT':
+        deliverable_data = JSONParser().parse(request)
+        try:
+            deliverable = Deliverable.objects.get(id=id)
+        except Deliverable.DoesNotExist:
+            return JsonResponse("Deliverable not found.", status=404, safe=False)
+
+        # Fetch the associated WorkPackage
+        try:
+            work_package = WorkPackage.objects.get(id=deliverable_data['work_package'])
+        except WorkPackage.DoesNotExist:
+            return JsonResponse("WorkPackage not found.", status=404, safe=False)
+
+        # Check if deliverable's deadline fall within the work package's start and end months
+        deliverable_deadline = int(deliverable_data['deadline'])
+        wp_start_month = work_package.start_date
+        wp_end_month = work_package.end_date
+
+        if deliverable_deadline< wp_start_month or deliverable_deadline > wp_end_month:
+            return JsonResponse("Deliverable deadline cannot exceed WorkPackage months.", status=400, safe=False)
+
+        deliverable_serializer = DeliverableSerializer(deliverable, data=deliverable_data)
+        if deliverable_serializer.is_valid():
+            deliverable_serializer.save()
+            return JsonResponse("Deliverable updated successfully!", safe=False)
+        return JsonResponse("Failed to update deliverable.", status=400, safe=False)
+
+    elif request.method == 'DELETE':
+        try:
+            deliverable = Deliverable.objects.get(id=id)
+            deliverable.delete()
+            return JsonResponse("Deliverable deleted successfully!", safe=False)
+        except Deliverable.DoesNotExist:
+            return JsonResponse("Deliverable not found.", status=404, safe=False)
+
+               

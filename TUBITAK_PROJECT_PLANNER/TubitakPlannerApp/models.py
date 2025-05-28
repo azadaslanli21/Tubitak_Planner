@@ -64,3 +64,10 @@ class Project(models.Model):
     def __str__(self):
         return self.name
     
+class Deliverable(models.Model) :
+    id = models.AutoField(primary_key=True)
+    
+    name = models.CharField(max_length=255)
+    description = models.TextField
+    deadline = models.DateField
+    work_package = models.ForeignKey(WorkPackage, on_delete=models.CASCADE, related_name='deliverables')    
