@@ -295,7 +295,7 @@ def deliverableApi(request, id=0):
 
         
         # Serialize and save the Deliverable
-        deliverable = DeliverableSerializer(data=deliverable_data)
+        deliverable_serializer = DeliverableSerializer(data=deliverable_data)
         if deliverable_serializer.is_valid():
             deliverable = deliverable_serializer.save()
             deliverable.work_package = work_package  # Assign the deliverable to the WorkPackage
