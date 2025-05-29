@@ -47,7 +47,7 @@ export class BudgetPage extends Component {
 			return;
 		}
 
-		const { contrib, workPackages } = this.state;
+		const { contrib, workPackages, users } = this.state;
 		const newKey = this.key(wpId, userId, month);
 
 		// create a temporary copy
@@ -58,19 +58,17 @@ export class BudgetPage extends Component {
 			tempContrib[newKey] = num;
 		}
 
-		// calculate the sum for the work package (wpId) and month across all its users
-		const targetWorkPackage = workPackages.find(wp => wp.id === wpId);
-		if (!targetWorkPackage) return; // should not happen
-
-		let workPackageColumnSum = 0;
-		for (const uidInPackage of targetWorkPackage.users) {
-			const keyForSum = this.key(wpId, uidInPackage, month);
-			workPackageColumnSum += tempContrib[keyForSum] || 0;
+		// Calculate the sum for the user (userId) in that month across all work packages
+		let userMonthSum = 0;
+		for (const wp_iter of workPackages) {
+			const keyForSum = this.key(wp_iter.id, userId, month);
+			userMonthSum += tempContrib[keyForSum] || 0;
 		}
 
-		if (workPackageColumnSum > 1) {
-			const wpName = targetWorkPackage.name;
-			this.setState({ showAlert: `Total for Work Package '${wpName}' in month ${month} (${workPackageColumnSum.toFixed(2)}) cannot exceed 1.` });
+		if (userMonthSum > 1) {
+			const user = users.find(u => u.id === userId);
+			const userName = user ? (user.username || user.name) : `User ID ${userId}`;
+			this.setState({ showAlert: `Total for User '${userName}' in month ${month} (${userMonthSum.toFixed(2)}) cannot exceed 1.` });
 			return; // do not update state if sum exceeds 1
 		}
 
@@ -79,7 +77,7 @@ export class BudgetPage extends Component {
 	};
 
 	handlePropagate = (wpId, userId, month, currentValue) => {
-		const { contrib, workPackages, maxMonth } = this.state;
+		const { contrib, workPackages, maxMonth, users } = this.state;
 		const numValue = parseFloat(currentValue);
 
 		if (isNaN(numValue) || numValue < 0 || numValue > 1) {
@@ -92,23 +90,21 @@ export class BudgetPage extends Component {
 
 		for (let m = month + 1; m <= maxMonth; m++) {
 			const keyToUpdate = this.key(wpId, userId, m);
-			const oldValue = tempContrib[keyToUpdate] || 0;
 			tempContrib[keyToUpdate] = numValue;
 
-			const targetWorkPackage = workPackages.find(wp => wp.id === wpId);
-			if (!targetWorkPackage) continue; // should not happen
-
-			let workPackageColumnSum = 0;
-			for (const uidInPackage of targetWorkPackage.users) {
-				const keyForSum = this.key(wpId, uidInPackage, m);
-				workPackageColumnSum += tempContrib[keyForSum] || 0;
+			// calculate the sum for the user (userId) in month cross all work packages
+			let userMonthSum = 0;
+			for (const wp_iter of workPackages) {
+				const keyForSum = this.key(wp_iter.id, userId, m);
+				userMonthSum += tempContrib[keyForSum] || 0;
 			}
 
-			if (workPackageColumnSum > 1) {
-				const wpName = targetWorkPackage.name;
+			if (userMonthSum > 1) {
+				const user = users.find(u => u.id === userId);
+				const userName = user ? (user.username || user.name) : `User ID ${userId}`;
 				this.setState({
 					contrib: originalContrib, // Revert to original state before this failed propagation
-					showAlert: `Propagation stopped. Total for Work Package '${wpName}' in month ${m} (${workPackageColumnSum.toFixed(2)}) would exceed 1.`
+					showAlert: `Propagation stopped. Total for User '${userName}' in month ${m} (${userMonthSum.toFixed(2)}) would exceed 1.`
 				});
 				return;
 			}
