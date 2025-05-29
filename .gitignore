@@ -17,9 +17,6 @@ ENV/
 media/
 staticfiles/
 
-# Environment variables
-.env
-
 # VSCode/IDE
 .vscode/
 *.code-workspace
