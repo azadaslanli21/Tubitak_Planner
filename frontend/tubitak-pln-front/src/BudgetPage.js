@@ -6,225 +6,304 @@ import dayjs from 'dayjs';
 const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => start + i);
 
 export class BudgetPage extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      projectStart: '',      // ISO date string (needed for calendar labels)
-      workPackages: [],      // fetched
-      users: [],             // fetched (with wage)
-      contrib: {},
-      maxMonth: 0,
-      showAlert: null,
-      totals: null
-    };
-  }
+	constructor(props) {
+		super(props);
+		this.state = {
+			projectStart: '',      // ISO date string (needed for calendar labels)
+			workPackages: [],      // fetched
+			users: [],             // fetched (with wage)
+			contrib: {},
+			maxMonth: 0,
+			showAlert: null,
+			totals: null
+		};
+	}
 
-  /* ----------------------- data loading ----------------------- */
-  componentDidMount() {
-    // 1️⃣ fetch project → then WP + users
-    fetch(process.env.REACT_APP_API + 'project/')
-      .then(r => r.ok ? r.json() : Promise.resolve({ start_date: '' }))
-      .then(project => {
-        this.setState({ projectStart: project.start_date });
-        return Promise.all([
-          fetch(process.env.REACT_APP_API + 'workpackages').then(r => r.json()),
-          fetch(process.env.REACT_APP_API + 'users').then(r => r.json())
-        ]);
-      })
-      .then(([wps, users]) => {
-        const maxMonth = wps.reduce((m, wp) => Math.max(m, wp.end_date), 0);
-        this.setState({ workPackages: wps, users, maxMonth });
-      });
-  }
+	/* ----------------------- data loading ----------------------- */
+	componentDidMount() {
+		// 1️⃣ fetch project → then WP + users
+		fetch(process.env.REACT_APP_API + 'project/')
+			.then(r => r.ok ? r.json() : Promise.resolve({ start_date: '' }))
+			.then(project => {
+				this.setState({ projectStart: project.start_date });
+				return Promise.all([
+					fetch(process.env.REACT_APP_API + 'workpackages').then(r => r.json()),
+					fetch(process.env.REACT_APP_API + 'users').then(r => r.json())
+				]);
+			})
+			.then(([wps, users]) => {
+				const maxMonth = wps.reduce((m, wp) => Math.max(m, wp.end_date), 0);
+				this.setState({ workPackages: wps, users, maxMonth });
+			});
+	}
 
-  /* ----------------------- helpers ---------------------------- */
-  key = (wpId, userId, month) => `${wpId}_${userId}_${month}`;
+	/* ----------------------- helpers ---------------------------- */
+	key = (wpId, userId, month) => `${wpId}_${userId}_${month}`;
 
-  handleChange = (wpId, userId, month, value) => {
-    const num = parseFloat(value);
-    if (isNaN(num) || num < 0 || num > 1) return;
+	handleChange = (wpId, userId, month, value) => {
+		const num = parseFloat(value);
+		if (value !== '' && (isNaN(num) || num < 0 || num > 1)) {
+			this.setState({ showAlert: `Input must be a number between 0 and 1.` });
+			return;
+		}
 
-    const { contrib } = this.state;
-    const newKey = this.key(wpId, userId, month);
-    const temp = { ...contrib, [newKey]: num };
+		const { contrib, workPackages } = this.state;
+		const newKey = this.key(wpId, userId, month);
 
-    const monthlySum = Object.entries(temp)
-      .filter(([k]) => k.endsWith(`_${userId}_${month}`))
-      .reduce((s, [, v]) => s + v, 0);
+		// create a temporary copy
+		const tempContrib = { ...contrib };
+		if (value === '') {
+			delete tempContrib[newKey]; // Remove if empty
+		} else {
+			tempContrib[newKey] = num;
+		}
 
-    if (monthlySum > 1) {
-      this.setState({ showAlert: `Total for user exceeds 1 in month ${month}` });
-      return;
-    }
+		// calculate the sum for the work package (wpId) and month across all its users
+		const targetWorkPackage = workPackages.find(wp => wp.id === wpId);
+		if (!targetWorkPackage) return; // should not happen
 
-    this.setState({ contrib: temp, showAlert: null });
-  };
+		let workPackageColumnSum = 0;
+		for (const uidInPackage of targetWorkPackage.users) {
+			const keyForSum = this.key(wpId, uidInPackage, month);
+			workPackageColumnSum += tempContrib[keyForSum] || 0;
+		}
 
-  calculateTotals = () => {
-    const { contrib, users } = this.state;
-    const userTotals = {};
-    const wpTotals   = {};
-    const monthTotals = {};
+		if (workPackageColumnSum > 1) {
+			const wpName = targetWorkPackage.name;
+			this.setState({ showAlert: `Total for Work Package '${wpName}' in month ${month} (${workPackageColumnSum.toFixed(2)}) cannot exceed 1.` });
+			return; // do not update state if sum exceeds 1
+		}
 
-    Object.entries(contrib).forEach(([key, value]) => {
-      const [wpId, userId, month] = key.split('_');
-      const wage = users.find(u => u.id === parseInt(userId))?.wage || 0;
-      const amount = value * wage;
+		// if valid update the actual contributions
+		this.setState({ contrib: tempContrib, showAlert: null });
+	};
 
-      userTotals[userId] = (userTotals[userId] || 0) + amount;
-      wpTotals[wpId]     = (wpTotals[wpId] || 0) + amount;
-      monthTotals[month] = (monthTotals[month] || 0) + amount;
-    });
+	handlePropagate = (wpId, userId, month, currentValue) => {
+		const { contrib, workPackages, maxMonth } = this.state;
+		const numValue = parseFloat(currentValue);
 
-    const grandTotal = Object.values(userTotals).reduce((s, v) => s + v, 0);
-    this.setState({ totals: { userTotals, wpTotals, monthTotals, grandTotal } });
-  };
+		if (isNaN(numValue) || numValue < 0 || numValue > 1) {
+			this.setState({ showAlert: "Cannot propagate: invalid source value." });
+			return;
+		}
 
-  /* ----------------------- rendering -------------------------- */
-  renderHeader = () => {
-    const { maxMonth, projectStart } = this.state;
-    return (
-      <tr>
-        <th>WorkPackage</th>
-        <th>User</th>
-        {range(1, maxMonth).map(m => {
-          const label = projectStart ? dayjs(projectStart).add(m - 1, 'month').format('MMM YY') : m;
-          return <th key={m}>{label}</th>;
-        })}
-      </tr>
-    );
-  };
+		let tempContrib = { ...contrib };
+		const originalContrib = { ...contrib }; // to revert if propagation fails
 
-  render() {
-    const { workPackages, users, maxMonth, contrib, showAlert, totals, projectStart } = this.state;
+		for (let m = month + 1; m <= maxMonth; m++) {
+			const keyToUpdate = this.key(wpId, userId, m);
+			const oldValue = tempContrib[keyToUpdate] || 0;
+			tempContrib[keyToUpdate] = numValue;
 
-    const userMap = {};
-    users.forEach(u => (userMap[u.id] = u.username || u.name));
+			const targetWorkPackage = workPackages.find(wp => wp.id === wpId);
+			if (!targetWorkPackage) continue; // should not happen
 
-    return (
-      <Container fluid className="mt-4">
-        {/* Project start date display (read-only) */}
-        <Row className="mb-3">
-          <Col sm={4}>
-            <Form.Group>
-              <Form.Label>Project Start Date:</Form.Label>
-              <Form.Control type="text" readOnly value={projectStart || '—'} />
-            </Form.Group>
-          </Col>
-        </Row>
+			let workPackageColumnSum = 0;
+			for (const uidInPackage of targetWorkPackage.users) {
+				const keyForSum = this.key(wpId, uidInPackage, m);
+				workPackageColumnSum += tempContrib[keyForSum] || 0;
+			}
 
-        {showAlert && (
-          <Alert variant="danger" onClose={() => this.setState({ showAlert: null })} dismissible>
-            {showAlert}
-          </Alert>
-        )}
+			if (workPackageColumnSum > 1) {
+				const wpName = targetWorkPackage.name;
+				this.setState({
+					contrib: originalContrib, // Revert to original state before this failed propagation
+					showAlert: `Propagation stopped. Total for Work Package '${wpName}' in month ${m} (${workPackageColumnSum.toFixed(2)}) would exceed 1.`
+				});
+				return;
+			}
+		}
 
-        <Table bordered size="sm" className="budget-table">
-          <thead>{this.renderHeader()}</thead>
-          <tbody>
-            {workPackages.map(wp => (
-              wp.users.map((uid, idx) => (
-                <tr key={`${wp.id}-${uid}`}>
-                  {idx === 0 && (
-                    <td rowSpan={wp.users.length} className="align-middle font-weight-bold">
-                      {wp.name}
-                    </td>
-                  )}
-                  <td>{userMap[uid] || uid}</td>
-                  {range(1, maxMonth).map(month => {
-                    const k = this.key(wp.id, uid, month);
-                    return (
-                      <td key={k} style={{ minWidth: 80 }}>
-                        <Form.Control
-                          type="number"
-                          min="0"
-                          max="1"
-                          step="0.05"
-                          value={contrib[k] ?? ''}
-                          onChange={e => this.handleChange(wp.id, uid, month, e.target.value)}
-                        />
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))
-            ))}
-          </tbody>
-        </Table>
+		// If all propagations are valid
+		this.setState({ contrib: tempContrib, showAlert: null });
+	};
 
-        <Button variant="success" onClick={this.calculateTotals} className="mb-3">
-          Calculate Budget
-        </Button>
+	calculateTotals = () => {
+		const { contrib, users } = this.state;
+		const userTotals = {};
+		const wpTotals = {};
+		const monthTotals = {};
 
-        {totals && (
-          <>
-            <h4>User Totals</h4>
-            <Table bordered size="sm">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Total Budget</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(totals.userTotals).map(([uid, val]) => (
-                  <tr key={uid}>
-                    <td>{userMap[uid] || uid}</td>
-                    <td>{val.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+		Object.entries(contrib).forEach(([key, value]) => {
+			const [wpId, userId, month] = key.split('_');
+			const wage = users.find(u => u.id === parseInt(userId))?.wage || 0;
+			const amount = value * wage;
 
-            <h4>WorkPackage Totals</h4>
-            <Table bordered size="sm">
-              <thead>
-                <tr>
-                  <th>WorkPackage</th>
-                  <th>Total Budget</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(totals.wpTotals).map(([wpid, val]) => {
-                  const wp = workPackages.find(w => w.id.toString() === wpid);
-                  return (
-                    <tr key={wpid}>
-                      <td>{wp?.name || wpid}</td>
-                      <td>{val.toFixed(2)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </Table>
+			userTotals[userId] = (userTotals[userId] || 0) + amount;
+			wpTotals[wpId] = (wpTotals[wpId] || 0) + amount;
+			monthTotals[month] = (monthTotals[month] || 0) + amount;
+		});
 
-            <h4>Month Totals</h4>
-            <Table bordered size="sm">
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th>Total Budget</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(totals.monthTotals).map(([m, val]) => (
-                  <tr key={m}>
-                    <td>{projectStart ? dayjs(projectStart).add(parseInt(m) - 1, 'month').format('MMM YY') : m}</td>
-                    <td>{val.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+		const grandTotal = Object.values(userTotals).reduce((s, v) => s + v, 0);
+		this.setState({ totals: { userTotals, wpTotals, monthTotals, grandTotal } });
+	};
 
-            <h5>Total Project Budget: {totals.grandTotal.toFixed(2)}</h5>
-          </>
-        )}
+	/* ----------------------- rendering -------------------------- */
+	renderHeader = () => {
+		const { maxMonth, projectStart } = this.state;
+		return (
+			<tr>
+				<th>WorkPackage</th>
+				<th>User</th>
+				{range(1, maxMonth).map(m => {
+					const dateLabel = projectStart ? dayjs(projectStart).add(m - 1, 'month').format('MMM YY') : `Month ${m}`;
+					const finalLabel = `${dateLabel} (${m})`;
+					return <th key={m} className="budget-month-header">{finalLabel}</th>;
+				})}
+			</tr>
+		);
+	};
 
-        <style>{`
+	render() {
+		const { workPackages, users, maxMonth, contrib, showAlert, totals, projectStart } = this.state;
+
+		const userMap = {};
+		users.forEach(u => (userMap[u.id] = u.username || u.name));
+
+		return (
+			<Container fluid className="mt-4">
+				{/* Project start date display (read-only) */}
+				<Row className="mb-3">
+					<Col sm={4}>
+						<Form.Group>
+							<Form.Label>Project Start Date:</Form.Label>
+							<Form.Control type="text" readOnly value={projectStart || '—'} />
+						</Form.Group>
+					</Col>
+				</Row>
+
+				{showAlert && (
+					<Alert variant="danger" onClose={() => this.setState({ showAlert: null })} dismissible>
+						{showAlert}
+					</Alert>
+				)}
+
+				<Table bordered size="sm" className="budget-table">
+					<thead>{this.renderHeader()}</thead>
+					<tbody>
+						{workPackages.map(wp => (
+							wp.users.map((uid, idx) => (
+								<tr key={`${wp.id}-${uid}`}>
+									{idx === 0 && (
+										<td rowSpan={wp.users.length} className="align-middle font-weight-bold">
+											{wp.name}
+										</td>
+									)}
+									<td>{userMap[uid] || uid}</td>
+									{range(1, maxMonth).map(month => {
+										const k = this.key(wp.id, uid, month);
+										return (
+											<td key={k} style={{ minWidth: 80 }}>
+												<Form.Control
+													type="number"
+													min="0"
+													max="1"
+													step="0.05"
+													value={contrib[k] ?? ''}
+													onChange={e => this.handleChange(wp.id, uid, month, e.target.value)}
+												/>
+												{(contrib[k] !== undefined && contrib[k] !== '') && (
+													<Button
+														size="sm"
+														variant="outline-secondary"
+														className="ml-1 p-1"
+														title="Propagate this value to the right"
+														onClick={() => this.handlePropagate(wp.id, uid, month, contrib[k])}
+														style={{ lineHeight: '1', fontSize: '0.7rem' }} // Smaller button
+													>
+														&rarr;
+													</Button>
+												)}
+											</td>
+										);
+									})}
+								</tr>
+							))
+						))}
+					</tbody>
+				</Table>
+
+				<Button variant="success" onClick={this.calculateTotals} className="mb-3">
+					Calculate Budget
+				</Button>
+
+				{totals && (
+					<>
+						<h4>User Totals</h4>
+						<Table bordered size="sm">
+							<thead>
+								<tr>
+									<th>User</th>
+									<th>Total Budget</th>
+								</tr>
+							</thead>
+							<tbody>
+								{Object.entries(totals.userTotals).map(([uid, val]) => (
+									<tr key={uid}>
+										<td>{userMap[uid] || uid}</td>
+										<td>{val.toFixed(2)}</td>
+									</tr>
+								))}
+							</tbody>
+						</Table>
+
+						<h4>WorkPackage Totals</h4>
+						<Table bordered size="sm">
+							<thead>
+								<tr>
+									<th>WorkPackage</th>
+									<th>Total Budget</th>
+								</tr>
+							</thead>
+							<tbody>
+								{Object.entries(totals.wpTotals).map(([wpid, val]) => {
+									const wp = workPackages.find(w => w.id.toString() === wpid);
+									return (
+										<tr key={wpid}>
+											<td>{wp?.name || wpid}</td>
+											<td>{val.toFixed(2)}</td>
+										</tr>
+									);
+								})}
+							</tbody>
+						</Table>
+
+						<h4>Month Totals</h4>
+						<Table bordered size="sm">
+							<thead>
+								<tr>
+									<th>Month</th>
+									<th>Total Budget</th>
+								</tr>
+							</thead>
+							<tbody>
+								{Object.entries(totals.monthTotals).map(([m, val]) => (
+									<tr key={m}>
+										<td>{projectStart ? dayjs(projectStart).add(parseInt(m) - 1, 'month').format('MMM YY') : m}</td>
+										<td>{val.toFixed(2)}</td>
+									</tr>
+								))}
+							</tbody>
+						</Table>
+
+						<h5>Total Project Budget: {totals.grandTotal.toFixed(2)}</h5>
+					</>
+				)}
+
+				<style>{`
           .budget-table input {
             width: 70px;
+            display: inline-block;
+          }
+          .budget-table .btn-sm {
+            margin-left: 2px;
+          }
+          .budget-month-header {
+            min-width: 100px;
+            text-align: center;
           }
         `}</style>
-      </Container>
-    );
-  }
+			</Container>
+		);
+	}
 }

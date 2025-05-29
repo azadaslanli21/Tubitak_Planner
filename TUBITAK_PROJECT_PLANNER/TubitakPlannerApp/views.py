@@ -216,7 +216,7 @@ def taskApi(request, id=0):
 
 
 @csrf_exempt
-def projectApi(request):
+def projectApi(request, id=None):
     """
     GET    → returns the single project (404 if none yet)
     POST   → create if none exists
@@ -224,30 +224,42 @@ def projectApi(request):
     """
     if request.method == 'GET':
         try:
-            proj = Project.objects.get(pk=1)
+            proj = Project.objects.get(pk=id if id else 1)
             return JsonResponse(ProjectSerializer(proj).data, safe=False)
         except Project.DoesNotExist:
             return JsonResponse({"detail": "No project set."}, status=404)
 
-    data = JSONParser().parse(request)
-
-    if request.method == 'POST':            # create once
-        if Project.objects.exists():
-            return JsonResponse("Project already exists.", status=400, safe=False)
+    if request.method == 'POST':
+        if id is not None:
+            return JsonResponse({"detail": "POST request should not include an ID in the URL."}, status=400)
+        data = JSONParser().parse(request)
+        if Project.objects.filter(pk=1).exists():
+            return JsonResponse({"detail": "Project already exists. Use PUT to update."}, status=400, safe=False)
+        
         ser = ProjectSerializer(data=data)
-        return JsonResponse(ser.data, safe=False) if ser.is_valid() and (ser.save() or True) \
-               else JsonResponse(ser.errors, status=400, safe=False)
+        if ser.is_valid():
+            ser.save()
+            return JsonResponse(ser.data, status=201, safe=False)
+        return JsonResponse(ser.errors, status=400, safe=False)
 
-    if request.method == 'PUT':             # update
+    if request.method == 'PUT':
+        if id is None:
+            id = 1
+        
+        data = JSONParser().parse(request)
         try:
-            proj = Project.objects.get(pk=1)
+            proj = Project.objects.get(pk=id)
         except Project.DoesNotExist:
-            return JsonResponse("Project not found.", status=404, safe=False)
+            return JsonResponse({"detail": "Project not found to update."}, status=404, safe=False)
+        
         ser = ProjectSerializer(proj, data=data)
-        return JsonResponse("Updated!", safe=False) if ser.is_valid() and (ser.save() or True) \
-               else JsonResponse(ser.errors, status=400, safe=False)
-               
-               
+        if ser.is_valid():
+            ser.save()
+            return JsonResponse(ser.data, safe=False)
+        return JsonResponse(ser.errors, status=400, safe=False)
+    
+    return JsonResponse({"detail": f"Method {request.method} not allowed or ID mismatch."}, status=405)
+
 # Delvierable API View
 @csrf_exempt
 def deliverableApi(request, id=0):
