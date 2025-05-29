@@ -8,6 +8,7 @@ import { Task } from './Task';
 import { Navigation } from './Navigation';
 import { GanttChartPage } from './GanttChartPage';
 import { BudgetPage } from './BudgetPage';
+import { Deliverable } from './Deliverable';
 
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
@@ -25,6 +26,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/user" element={<User />} />
           <Route path="/workpackage" element={<WorkPackage />} />
+          <Route path="/deliverable" element={<Deliverable />} />
           <Route path="/task" element={<Task />} />
           <Route path="/gantt" element={<GanttChartPage />} />
           <Route path="/budget" element={<BudgetPage />} />
