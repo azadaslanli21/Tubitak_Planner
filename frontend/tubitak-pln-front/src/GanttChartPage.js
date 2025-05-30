@@ -241,10 +241,7 @@ export class GanttChartPage extends Component {
 
 				<Row className="mb-3">
 					<Col sm={6} className="d-flex gap-4">
-						<Form.Check
-							type="checkbox" label="Show WPs" checked={showWorkPackages}
-							onChange={e => this.setState({ showWorkPackages: e.target.checked }, this.buildGanttData)}
-						/>
+						
 						<Form.Check
 							type="checkbox" label="Show Tasks" checked={showTasks}
 							onChange={e => this.setState({ showTasks: e.target.checked }, this.buildGanttData)}
