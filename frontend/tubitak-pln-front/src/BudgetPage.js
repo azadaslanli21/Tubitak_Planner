@@ -68,7 +68,7 @@ export class BudgetPage extends Component {
 		let userMonthSum = 0;
 		for (const wp_iter of workPackages) {
 			const keyForSum = this.key(wp_iter.id, userId, month);
-			userMonthSum += tempContrib[keyForSum] || 0;
+			userMonthSum += parseFloat(tempContrib[keyForSum]) || 0;
 		}
 
 		if (userMonthSum > 1) {
@@ -102,7 +102,7 @@ export class BudgetPage extends Component {
 			let userMonthSum = 0;
 			for (const wp_iter of workPackages) {
 				const keyForSum = this.key(wp_iter.id, userId, m);
-				userMonthSum += tempContrib[keyForSum] || 0;
+				userMonthSum += parseFloat(tempContrib[keyForSum]) || 0;
 			}
 
 			if (userMonthSum > 1) {
@@ -138,6 +138,14 @@ export class BudgetPage extends Component {
 
 		const grandTotal = Object.values(userTotals).reduce((s, v) => s + v, 0);
 		this.setState({ totals: { userTotals, wpTotals, monthTotals, grandTotal } });
+	};
+
+	handleResetBudget = () => {
+		this.setState({
+			contrib: {},
+			totals: null,
+			showAlert: null
+		});
 	};
 
 	handleSaveBudget = () => {
@@ -256,6 +264,9 @@ export class BudgetPage extends Component {
 				</Button>
 				<Button variant="primary" onClick={this.handleSaveBudget} className="mb-3 ml-2">
 					Save Budget
+				</Button>
+				<Button variant="warning" onClick={this.handleResetBudget} className="mb-3 ml-2">
+					Reset Budget
 				</Button>
 
 				{totals && (
