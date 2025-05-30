@@ -71,3 +71,16 @@ class Deliverable(models.Model) :
     description = models.TextField(null=True, blank=True)
     deadline = models.IntegerField(null=True, blank=True)
     work_package = models.ForeignKey(WorkPackage, on_delete=models.CASCADE, related_name='deliverables')    
+
+class BudgetEntry(models.Model):
+    id = models.AutoField(primary_key=True)
+    work_package = models.ForeignKey(WorkPackage, on_delete=models.CASCADE, related_name='budget_entries')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='budget_entries')
+    month = models.IntegerField()
+    contribution = models.DecimalField(max_digits=3, decimal_places=2)
+
+    class Meta:
+        unique_together = ('work_package', 'user', 'month')
+
+    def __str__(self):
+        return f"{self.work_package.name} - {self.user.name} - Month {self.month}: {self.contribution}"

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from TubitakPlannerApp.models import User, WorkPackage, Task, Project, Deliverable
+from TubitakPlannerApp.models import User, WorkPackage, Task, Project, Deliverable, BudgetEntry
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -41,4 +41,9 @@ class ProjectSerializer(serializers.ModelSerializer):
 class DeliverableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deliverable
-        fields = ['id', 'name', 'description', 'deadline', 'work_package']                     
+        fields = ['id', 'name', 'description', 'deadline', 'work_package']
+
+class BudgetEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BudgetEntry
+        fields = ('id', 'work_package', 'user', 'month', 'contribution')                     

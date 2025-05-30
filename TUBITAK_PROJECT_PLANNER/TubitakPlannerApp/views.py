@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from rest_framework.parsers import JSONParser
-from .models import User, WorkPackage, Task, Project, Deliverable
-from .serializers import UserSerializer, WorkPackageSerializer, TaskSerializer, ProjectSerializer, DeliverableSerializer
+from .models import User, WorkPackage, Task, Project, Deliverable, BudgetEntry
+from .serializers import UserSerializer, WorkPackageSerializer, TaskSerializer, ProjectSerializer, DeliverableSerializer, BudgetEntrySerializer
 from django.views.decorators.csrf import csrf_exempt
 
 # User API View
@@ -337,5 +337,50 @@ def deliverableApi(request, id=0):
             return JsonResponse("Deliverable deleted successfully!", safe=False)
         except Deliverable.DoesNotExist:
             return JsonResponse("Deliverable not found.", status=404, safe=False)
+
+@csrf_exempt
+def budgetEntryApi(request):
+    if request.method == 'GET':
+        budget_entries = BudgetEntry.objects.all()
+        budget_entry_serializer = BudgetEntrySerializer(budget_entries, many=True)
+        
+        # transform data for frontend compatibility (key-value pair)
+        transformed_data = {}
+        for entry in budget_entry_serializer.data:
+            key = f"{entry['work_package']}_{entry['user']}_{entry['month']}"
+            transformed_data[key] = entry['contribution']
+        return JsonResponse(transformed_data, safe=False)
+
+    elif request.method == 'POST':
+        data = JSONParser().parse(request)
+        
+        # consider a better way to partially update the budget entries
+        BudgetEntry.objects.all().delete()
+        
+        saved_entries = []
+        errors = []
+
+        for key, value in data.items():
+            try:
+                wp_id, user_id, month = key.split('_')
+                entry_data = {
+                    'work_package': int(wp_id),
+                    'user': int(user_id),
+                    'month': int(month),
+                    'contribution': value
+                }
+                serializer = BudgetEntrySerializer(data=entry_data)
+                if serializer.is_valid():
+                    serializer.save()
+                    saved_entries.append(serializer.data)
+                else:
+                    errors.append({key: serializer.errors})
+            except Exception as e:
+                errors.append({key: str(e)})
+
+        if errors:
+            return JsonResponse({"message": "Some entries failed to save.", "errors": errors, "saved_entries": saved_entries}, status=400)
+        
+        return JsonResponse({"message": "Budget saved successfully!", "saved_entries": len(saved_entries)}, status=201)
 
                

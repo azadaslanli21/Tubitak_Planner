@@ -28,12 +28,18 @@ export class BudgetPage extends Component {
 				this.setState({ projectStart: project.start_date });
 				return Promise.all([
 					fetch(process.env.REACT_APP_API + 'workpackages').then(r => r.json()),
-					fetch(process.env.REACT_APP_API + 'users').then(r => r.json())
+					fetch(process.env.REACT_APP_API + 'users').then(r => r.json()),
+					fetch(process.env.REACT_APP_API + 'budget/').then(r => r.ok ? r.json() : {})
 				]);
 			})
-			.then(([wps, users]) => {
+			.then(([wps, users, budgetData]) => {
 				const maxMonth = wps.reduce((m, wp) => Math.max(m, wp.end_date), 0);
-				this.setState({ workPackages: wps, users, maxMonth });
+				this.setState({
+					workPackages: wps,
+					users,
+					maxMonth,
+					contrib: budgetData || {}
+				});
 			});
 	}
 
@@ -134,6 +140,32 @@ export class BudgetPage extends Component {
 		this.setState({ totals: { userTotals, wpTotals, monthTotals, grandTotal } });
 	};
 
+	handleSaveBudget = () => {
+		fetch(process.env.REACT_APP_API + 'budget/', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(this.state.contrib),
+		})
+			.then(response => {
+				if (response.ok) {
+					return response.json().then(data => {
+						this.setState({ showAlert: data.message || "Budget saved successfully", alertVariant: 'success' });
+					});
+				} else {
+					return response.json().then(data => {
+						console.error("Failed to save budget:", data);
+						this.setState({ showAlert: `Failed to save budget. ${data.detail || (data.errors ? JSON.stringify(data.errors) : '')}`, alertVariant: 'danger' });
+					});
+				}
+			})
+			.catch(error => {
+				console.error('Error saving budget:', error);
+				this.setState({ showAlert: 'An error occurred while saving the budget.', alertVariant: 'danger' });
+			});
+	};
+
 	/* ----------------------- rendering -------------------------- */
 	renderHeader = () => {
 		const { maxMonth, projectStart } = this.state;
@@ -221,6 +253,9 @@ export class BudgetPage extends Component {
 
 				<Button variant="success" onClick={this.calculateTotals} className="mb-3">
 					Calculate Budget
+				</Button>
+				<Button variant="primary" onClick={this.handleSaveBudget} className="mb-3 ml-2">
+					Save Budget
 				</Button>
 
 				{totals && (
