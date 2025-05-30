@@ -1,0 +1,24 @@
+/* Work-Package bars  */
+.bar-deliverable .bar,
+.bar-wp .bar {
+  rx: 3px !important;
+  ry: 3px !important;
+}
+
+/* Blue for WPs */
+.bar-wp .bar {
+  fill: rgb(0, 88, 210) !important;
+}
+
+/* Green for Tasks */
+.bar-task .bar {
+  fill: rgb(105, 149, 105) !important;
+}
+
+/* RED square for Deliverables */
+.bar-deliverable .bar {
+  fill: red !important;
+  width: 10px !important;   /* override the 4 px default */
+  height: 25px !important;
+  transform: translateY(6px); /* centre the square in the row */
+}
