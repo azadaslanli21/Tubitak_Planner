@@ -23,9 +23,9 @@ export class Deliverable extends Component {
 
   getWPName = id => this.state.wpMap[id] || id;
 
-  deleteTask = id => {
+  deleteDeliverable = id => {
     if (window.confirm('Are you sure?')) {
-      fetch(process.env.REACT_APP_API + 'deliverables/' + id + '/', {
+      fetch(process.env.REACT_APP_API + 'deliverables/' + id, {
         method: 'DELETE',
         headers: {
           Accept: 'application/json',
