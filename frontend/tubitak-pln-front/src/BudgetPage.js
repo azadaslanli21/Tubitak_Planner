@@ -2,350 +2,296 @@ import React, { Component } from 'react';
 import { Container, Table, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import dayjs from 'dayjs';
 
-// Utility: build array [start, start+1, ... end] inclusive
-const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => start + i);
+// inclusive numeric range helper
+const range = (s, e) => Array.from({ length: e - s + 1 }, (_, i) => s + i);
 
 export class BudgetPage extends Component {
-	constructor(props) {
-		super(props);
-		this.state = {
-			projectStart: '',      // ISO date string (needed for calendar labels)
-			workPackages: [],      // fetched
-			users: [],             // fetched (with wage)
-			contrib: {},
-			maxMonth: 0,
-			showAlert: null,
-			totals: null
-		};
-	}
+  constructor(props) {
+    super(props);
+    this.state = {
+      projectStart: '',
+      workPackages: [],
+      users: [],
+      contrib: {},          // { 'wp_user_month': number }
+      maxMonth: 0,
+      showAlert: null,
+      alertVariant: 'danger',
+      totals: null,
+    };
+  }
 
-	/* ----------------------- data loading ----------------------- */
-	componentDidMount() {
-		// 1️⃣ fetch project → then WP + users
-		fetch(process.env.REACT_APP_API + 'project/')
-			.then(r => r.ok ? r.json() : Promise.resolve({ start_date: '' }))
-			.then(project => {
-				this.setState({ projectStart: project.start_date });
-				return Promise.all([
-					fetch(process.env.REACT_APP_API + 'workpackages').then(r => r.json()),
-					fetch(process.env.REACT_APP_API + 'users').then(r => r.json()),
-					fetch(process.env.REACT_APP_API + 'budget/').then(r => r.ok ? r.json() : {})
-				]);
-			})
-			.then(([wps, users, budgetData]) => {
-				const maxMonth = wps.reduce((m, wp) => Math.max(m, wp.end_date), 0);
-				this.setState({
-					workPackages: wps,
-					users,
-					maxMonth,
-					contrib: budgetData || {}
-				});
-			});
-	}
+  /* ---------------- data loading ---------------- */
+  componentDidMount() {
+    fetch(process.env.REACT_APP_API + 'project/')
+      .then((r) => (r.ok ? r.json() : { start_date: '' }))
+      .then((proj) => {
+        this.setState({ projectStart: proj.start_date });
+        return Promise.all([
+          fetch(process.env.REACT_APP_API + 'workpackages').then((r) => r.json()),
+          fetch(process.env.REACT_APP_API + 'users').then((r) => r.json()),
+          fetch(process.env.REACT_APP_API + 'budget/').then((r) => (r.ok ? r.json() : {})),
+        ]);
+      })
+      .then(([wps, users, budgetData]) => {
+        const maxMonth = wps.reduce((m, wp) => Math.max(m, wp.end_date), 0); // end_date is a month index (int)
+        this.setState({ workPackages: wps, users, maxMonth, contrib: budgetData });
+      });
+  }
 
-	/* ----------------------- helpers ---------------------------- */
-	key = (wpId, userId, month) => `${wpId}_${userId}_${month}`;
+  /* -------------- helpers ---------------- */
+  key = (wpId, userId, month) => `${wpId}_${userId}_${month}`;
 
-	handleChange = (wpId, userId, month, value) => {
-		const num = parseFloat(value);
-		if (value !== '' && (isNaN(num) || num < 0 || num > 1)) {
-			this.setState({ showAlert: `Input must be a number between 0 and 1.` });
-			return;
-		}
+  validateSum = (temp, month, userId) => {
+    const { workPackages } = this.state;
+    let sum = 0;
+    workPackages.forEach((wp) => {
+      sum += parseFloat(temp[this.key(wp.id, userId, month)]) || 0;
+    });
+    return sum <= 1;
+  };
 
-		const { contrib, workPackages, users } = this.state;
-		const newKey = this.key(wpId, userId, month);
+  handleChange = (wpId, userId, month, value) => {
+    const num = parseFloat(value);
+    if (value !== '' && (isNaN(num) || num < 0 || num > 1)) {
+      this.setState({ showAlert: 'Input must be between 0 and 1.', alertVariant: 'danger' });
+      return;
+    }
 
-		// create a temporary copy
-		const tempContrib = { ...contrib };
-		if (value === '') {
-			delete tempContrib[newKey]; // Remove if empty
-		} else {
-			tempContrib[newKey] = num;
-		}
+    this.setState((state) => {
+      const next = { ...state.contrib };
+      const k = this.key(wpId, userId, month);
+      value === '' ? delete next[k] : (next[k] = num);
 
-		// Calculate the sum for the user (userId) in that month across all work packages
-		let userMonthSum = 0;
-		for (const wp_iter of workPackages) {
-			const keyForSum = this.key(wp_iter.id, userId, month);
-			userMonthSum += parseFloat(tempContrib[keyForSum]) || 0;
-		}
+      if (!this.validateSum(next, month, userId)) {
+        return { showAlert: `User total in month ${month} exceeds 1.0`, alertVariant: 'danger' };
+      }
+      return { contrib: next, showAlert: null };
+    });
+  };
 
-		if (userMonthSum > 1) {
-			const user = users.find(u => u.id === userId);
-			const userName = user ? (user.username || user.name) : `User ID ${userId}`;
-			this.setState({ showAlert: `Total for User '${userName}' in month ${month} (${userMonthSum.toFixed(2)}) cannot exceed 1.` });
-			return; // do not update state if sum exceeds 1
-		}
+  handlePropagate = (wpId, userId, startMonth, val) => {
+    const num = parseFloat(val);
+    if (isNaN(num) || num < 0 || num > 1) {
+      this.setState({ showAlert: 'Cannot propagate invalid number.', alertVariant: 'danger' });
+      return;
+    }
 
-		// if valid update the actual contributions
-		this.setState({ contrib: tempContrib, showAlert: null });
-	};
+    const wp = this.state.workPackages.find((w) => w.id === wpId);
+    if (!wp) return;
 
-	handlePropagate = (wpId, userId, month, currentValue) => {
-		const { contrib, workPackages, maxMonth, users } = this.state;
-		const numValue = parseFloat(currentValue);
+    this.setState((state) => {
+      const next = { ...state.contrib };
+      for (let m = startMonth + 1; m <= wp.end_date; m++) {
+        next[this.key(wpId, userId, m)] = num;
+        if (!this.validateSum(next, m, userId)) {
+          return {
+            showAlert: `Propagation stopped; user total in month ${m} exceeds 1.0`,
+            alertVariant: 'danger',
+          };
+        }
+      }
+      return { contrib: next, showAlert: null };
+    });
+  };
 
-		if (isNaN(numValue) || numValue < 0 || numValue > 1) {
-			this.setState({ showAlert: "Cannot propagate: invalid source value." });
-			return;
-		}
+  /* -------------- totals ---------------- */
+  calculateTotals = () => {
+    const { contrib, users } = this.state;
+    const userTotals = {};
+    const wpTotals = {};
+    const monthTotals = {};
 
-		let tempContrib = { ...contrib };
-		const originalContrib = { ...contrib }; // to revert if propagation fails
+    Object.entries(contrib).forEach(([k, v]) => {
+      const [wpId, uid, month] = k.split('_');
+      const wage = users.find((u) => u.id === parseInt(uid))?.wage || 0;
+      const amt = v * wage;
 
-		for (let m = month + 1; m <= maxMonth; m++) {
-			const keyToUpdate = this.key(wpId, userId, m);
-			tempContrib[keyToUpdate] = numValue;
+      userTotals[uid] = (userTotals[uid] || 0) + amt;
+      wpTotals[wpId] = (wpTotals[wpId] || 0) + amt;
+      monthTotals[month] = (monthTotals[month] || 0) + amt;
+    });
 
-			// calculate the sum for the user (userId) in month cross all work packages
-			let userMonthSum = 0;
-			for (const wp_iter of workPackages) {
-				const keyForSum = this.key(wp_iter.id, userId, m);
-				userMonthSum += parseFloat(tempContrib[keyForSum]) || 0;
-			}
+    const grandTotal = Object.values(userTotals).reduce((a, b) => a + b, 0);
+    this.setState({ totals: { userTotals, wpTotals, monthTotals, grandTotal }, showAlert: null });
+  };
 
-			if (userMonthSum > 1) {
-				const user = users.find(u => u.id === userId);
-				const userName = user ? (user.username || user.name) : `User ID ${userId}`;
-				this.setState({
-					contrib: originalContrib, // Revert to original state before this failed propagation
-					showAlert: `Propagation stopped. Total for User '${userName}' in month ${m} (${userMonthSum.toFixed(2)}) would exceed 1.`
-				});
-				return;
-			}
-		}
+  handleSaveBudget = () => {
+    fetch(process.env.REACT_APP_API + 'budget/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(this.state.contrib),
+    })
+      .then((r) =>
+        r.ok
+          ? r.json().then((d) => this.setState({ showAlert: d.message || 'Saved!', alertVariant: 'success' }))
+          : r.json().then((d) => this.setState({ showAlert: `Save failed: ${d.detail || ''}`, alertVariant: 'danger' }))
+      )
+      .catch(() => this.setState({ showAlert: 'Network error saving budget.', alertVariant: 'danger' }));
+  };
 
-		// If all propagations are valid
-		this.setState({ contrib: tempContrib, showAlert: null });
-	};
+  handleResetBudget = () => this.setState({ contrib: {}, totals: null, showAlert: null });
 
-	calculateTotals = () => {
-		const { contrib, users } = this.state;
-		const userTotals = {};
-		const wpTotals = {};
-		const monthTotals = {};
+  /* -------------- render helpers ---------------- */
+  renderHeader = () => {
+    const { maxMonth, projectStart } = this.state;
+    return (
+      <tr>
+        <th>WorkPackage</th>
+        <th>User</th>
+        {range(1, maxMonth).map((m) => (
+          <th key={m} className="budget-month-header">
+            {projectStart ? dayjs(projectStart).add(m - 1, 'month').format('MMM YY') : m} ({m})
+          </th>
+        ))}
+      </tr>
+    );
+  };
 
-		Object.entries(contrib).forEach(([key, value]) => {
-			const [wpId, userId, month] = key.split('_');
-			const wage = users.find(u => u.id === parseInt(userId))?.wage || 0;
-			const amount = value * wage;
+  render() {
+    const { projectStart, workPackages, users, contrib, maxMonth, showAlert, alertVariant, totals } = this.state;
+    const userName = Object.fromEntries(users.map((u) => [u.id, u.username || u.name]));
 
-			userTotals[userId] = (userTotals[userId] || 0) + amount;
-			wpTotals[wpId] = (wpTotals[wpId] || 0) + amount;
-			monthTotals[month] = (monthTotals[month] || 0) + amount;
-		});
+    return (
+      <Container fluid className="mt-4">
+        <Row className="mb-3">
+          <Col sm={4}>
+            <Form.Group>
+              <Form.Label>Project Start Date</Form.Label>
+              <Form.Control readOnly value={projectStart || '—'} />
+            </Form.Group>
+          </Col>
+        </Row>
 
-		const grandTotal = Object.values(userTotals).reduce((s, v) => s + v, 0);
-		this.setState({ totals: { userTotals, wpTotals, monthTotals, grandTotal } });
-	};
+        {showAlert && (
+          <Alert variant={alertVariant} onClose={() => this.setState({ showAlert: null })} dismissible>
+            {showAlert}
+          </Alert>
+        )}
 
-	handleResetBudget = () => {
-		this.setState({
-			contrib: {},
-			totals: null,
-			showAlert: null
-		});
-	};
+        <Table bordered size="sm" responsive>
+          <thead>{this.renderHeader()}</thead>
+          <tbody>
+            {workPackages.map((wp) =>
+              wp.users.map((uid, idx) => (
+                <tr key={`${wp.id}_${uid}`}>
+                  {idx === 0 && (
+                    <td rowSpan={wp.users.length} className="align-middle font-weight-bold">
+                      {wp.name}
+                    </td>
+                  )}
+                  <td>{userName[uid] || uid}</td>
+                  {range(1, maxMonth).map((m) => {
+                    const k = this.key(wp.id, uid, m);
+                    const inRange = m >= wp.start_date && m <= wp.end_date;
+                    return (
+                      <td key={k} style={{ minWidth: 80 }}>
+                        {inRange ? (
+                          <>
+                            <Form.Control
+                              type="number"
+                              min="0"
+                              max="1"
+                              step="0.05"
+                              value={contrib[k] ?? ''}
+                              onChange={(e) => this.handleChange(wp.id, uid, m, e.target.value)}
+                            />
+                            {contrib[k] !== undefined && contrib[k] !== '' && (
+                              <Button
+                                size="sm"
+                                variant="outline-secondary"
+                                className="ml-1 p-1"
+                                title="Propagate right"
+                                onClick={() => this.handlePropagate(wp.id, uid, m, contrib[k])}
+                                style={{ fontSize: '0.7rem', lineHeight: 1 }}
+                              >
+                                &rarr;
+                              </Button>
+                            )}
+                          </>
+                        ) : (
+                          <div style={{ background: '#eee', width: '100%', height: '100%' }} />
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </Table>
 
-	handleSaveBudget = () => {
-		fetch(process.env.REACT_APP_API + 'budget/', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(this.state.contrib),
-		})
-			.then(response => {
-				if (response.ok) {
-					return response.json().then(data => {
-						this.setState({ showAlert: data.message || "Budget saved successfully", alertVariant: 'success' });
-					});
-				} else {
-					return response.json().then(data => {
-						console.error("Failed to save budget:", data);
-						this.setState({ showAlert: `Failed to save budget. ${data.detail || (data.errors ? JSON.stringify(data.errors) : '')}`, alertVariant: 'danger' });
-					});
-				}
-			})
-			.catch(error => {
-				console.error('Error saving budget:', error);
-				this.setState({ showAlert: 'An error occurred while saving the budget.', alertVariant: 'danger' });
-			});
-	};
+        <Button variant="success" className="mr-2" onClick={this.calculateTotals}>
+          Calculate Budget
+        </Button>
+        <Button variant="primary" className="mr-2" onClick={this.handleSaveBudget}>
+          Save Budget
+        </Button>
+        <Button variant="warning" onClick={this.handleResetBudget}>
+          Reset Budget
+        </Button>
 
-	/* ----------------------- rendering -------------------------- */
-	renderHeader = () => {
-		const { maxMonth, projectStart } = this.state;
-		return (
-			<tr>
-				<th>WorkPackage</th>
-				<th>User</th>
-				{range(1, maxMonth).map(m => {
-					const dateLabel = projectStart ? dayjs(projectStart).add(m - 1, 'month').format('MMM YY') : `Month ${m}`;
-					const finalLabel = `${dateLabel} (${m})`;
-					return <th key={m} className="budget-month-header">{finalLabel}</th>;
-				})}
-			</tr>
-		);
-	};
+        {totals && (
+          <>
+            <h4 className="mt-4">User Totals</h4>
+            <Table bordered size="sm" responsive>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(totals.userTotals).map(([uid, val]) => (
+                  <tr key={uid}>
+                    <td>{userName[uid] || uid}</td>
+                    <td>{val.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
 
-	render() {
-		const { workPackages, users, maxMonth, contrib, showAlert, totals, projectStart } = this.state;
+            <h4>WorkPackage Totals</h4>
+            <Table bordered size="sm" responsive>
+              <thead>
+                <tr>
+                  <th>WorkPackage</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(totals.wpTotals).map(([wpid, val]) => (
+                  <tr key={wpid}>
+                    <td>{workPackages.find((w) => String(w.id) === wpid)?.name || wpid}</td>
+                    <td>{val.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
 
-		const userMap = {};
-		users.forEach(u => (userMap[u.id] = u.username || u.name));
+            <h4>Month Totals</h4>
+            <Table bordered size="sm" responsive>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(totals.monthTotals).map(([m, val]) => (
+                  <tr key={m}>
+                    <td>
+                      {projectStart ? dayjs(projectStart).add(m - 1, 'month').format('MMM YY') : m} ({m})
+                    </td>
+                    <td>{val.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
 
-		return (
-			<Container fluid className="mt-4">
-				{/* Project start date display (read-only) */}
-				<Row className="mb-3">
-					<Col sm={4}>
-						<Form.Group>
-							<Form.Label>Project Start Date:</Form.Label>
-							<Form.Control type="text" readOnly value={projectStart || '—'} />
-						</Form.Group>
-					</Col>
-				</Row>
-
-				{showAlert && (
-					<Alert variant="danger" onClose={() => this.setState({ showAlert: null })} dismissible>
-						{showAlert}
-					</Alert>
-				)}
-
-				<Table bordered size="sm" className="budget-table">
-					<thead>{this.renderHeader()}</thead>
-					<tbody>
-						{workPackages.map(wp => (
-							wp.users.map((uid, idx) => (
-								<tr key={`${wp.id}-${uid}`}>
-									{idx === 0 && (
-										<td rowSpan={wp.users.length} className="align-middle font-weight-bold">
-											{wp.name}
-										</td>
-									)}
-									<td>{userMap[uid] || uid}</td>
-									{range(1, maxMonth).map(month => {
-										const k = this.key(wp.id, uid, month);
-										return (
-											<td key={k} style={{ minWidth: 80 }}>
-												<Form.Control
-													type="number"
-													min="0"
-													max="1"
-													step="0.05"
-													value={contrib[k] ?? ''}
-													onChange={e => this.handleChange(wp.id, uid, month, e.target.value)}
-												/>
-												{(contrib[k] !== undefined && contrib[k] !== '') && (
-													<Button
-														size="sm"
-														variant="outline-secondary"
-														className="ml-1 p-1"
-														title="Propagate this value to the right"
-														onClick={() => this.handlePropagate(wp.id, uid, month, contrib[k])}
-														style={{ lineHeight: '1', fontSize: '0.7rem' }} // Smaller button
-													>
-														&rarr;
-													</Button>
-												)}
-											</td>
-										);
-									})}
-								</tr>
-							))
-						))}
-					</tbody>
-				</Table>
-
-				<Button variant="success" onClick={this.calculateTotals} className="mb-3">
-					Calculate Budget
-				</Button>
-				<Button variant="primary" onClick={this.handleSaveBudget} className="mb-3 ml-2">
-					Save Budget
-				</Button>
-				<Button variant="warning" onClick={this.handleResetBudget} className="mb-3 ml-2">
-					Reset Budget
-				</Button>
-
-				{totals && (
-					<>
-						<h4>User Totals</h4>
-						<Table bordered size="sm">
-							<thead>
-								<tr>
-									<th>User</th>
-									<th>Total Budget</th>
-								</tr>
-							</thead>
-							<tbody>
-								{Object.entries(totals.userTotals).map(([uid, val]) => (
-									<tr key={uid}>
-										<td>{userMap[uid] || uid}</td>
-										<td>{val.toFixed(2)}</td>
-									</tr>
-								))}
-							</tbody>
-						</Table>
-
-						<h4>WorkPackage Totals</h4>
-						<Table bordered size="sm">
-							<thead>
-								<tr>
-									<th>WorkPackage</th>
-									<th>Total Budget</th>
-								</tr>
-							</thead>
-							<tbody>
-								{Object.entries(totals.wpTotals).map(([wpid, val]) => {
-									const wp = workPackages.find(w => w.id.toString() === wpid);
-									return (
-										<tr key={wpid}>
-											<td>{wp?.name || wpid}</td>
-											<td>{val.toFixed(2)}</td>
-										</tr>
-									);
-								})}
-							</tbody>
-						</Table>
-
-						<h4>Month Totals</h4>
-						<Table bordered size="sm">
-							<thead>
-								<tr>
-									<th>Month</th>
-									<th>Total Budget</th>
-								</tr>
-							</thead>
-							<tbody>
-								{Object.entries(totals.monthTotals).map(([m, val]) => (
-									<tr key={m}>
-										<td>{projectStart ? dayjs(projectStart).add(parseInt(m) - 1, 'month').format('MMM YY') : m}</td>
-										<td>{val.toFixed(2)}</td>
-									</tr>
-								))}
-							</tbody>
-						</Table>
-
-						<h5>Total Project Budget: {totals.grandTotal.toFixed(2)}</h5>
-					</>
-				)}
-
-				<style>{`
-          .budget-table input {
-            width: 70px;
-            display: inline-block;
-          }
-          .budget-table .btn-sm {
-            margin-left: 2px;
-          }
-          .budget-month-header {
-            min-width: 100px;
-            text-align: center;
-          }
-        `}</style>
-			</Container>
-		);
-	}
+            <h5>Grand Total: {totals.grandTotal.toFixed(2)}</h5>
+          </>
+        )}
+      </Container>
+    );
+  }
 }
