@@ -68,8 +68,8 @@ class Deliverable(models.Model) :
     id = models.AutoField(primary_key=True)
     
     name = models.CharField(max_length=255)
-    description = models.TextField
-    deadline = models.DateField
+    description = models.TextField()
+    deadline = models.IntegerField()
     work_package = models.ForeignKey(WorkPackage, on_delete=models.CASCADE, related_name='deliverables')    
 
 class BudgetEntry(models.Model):
