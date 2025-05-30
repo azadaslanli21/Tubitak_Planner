@@ -10,11 +10,11 @@ import { Navigation } from './Navigation';
 import { GanttChartPage } from './GanttChartPage';
 import { BudgetPage } from './BudgetPage';
 import { Deliverable } from './Deliverable';
-
+import { FormattedBudgetPage } from './FormattedBudgetPage.js'
 import { BrowserRouter, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 
 function NavigationStepper() {
-  const routes = ["/", "/user", "/workpackage", "/deliverable", "/task", "/gantt", "/budget"];
+  const routes = ["/", "/user", "/workpackage", "/deliverable", "/task", "/gantt", "/budget", "/formattedbudget"];
   const location = useLocation();
   const navigate = useNavigate();
   const currentIndex = routes.indexOf(location.pathname);
@@ -71,6 +71,7 @@ function App() {
           <Route path="/task" element={<Task />} />
           <Route path="/gantt" element={<GanttChartPage />} />
           <Route path="/budget" element={<BudgetPage />} />
+          <Route path="/formattedbudget" element={<FormattedBudgetPage />} />
         </Routes>
       </div>
     </BrowserRouter>
