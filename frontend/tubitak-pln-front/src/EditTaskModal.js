@@ -54,8 +54,15 @@ export class EditTaskModal extends Component {
 
     return (
       <Modal {...this.props} size="lg" centered>
-        <Modal.Header closeButton>
+        <Modal.Header style={{ position: 'relative' }}>
           <Modal.Title>Edit Task</Modal.Title>
+          <Button
+            variant="danger"
+            style={{ position: 'absolute', top: '1rem', right: '1rem' }}
+            onClick={this.props.onHide}
+          >
+            Close
+          </Button>
         </Modal.Header>
         <Modal.Body>
           <Row>
@@ -121,11 +128,6 @@ export class EditTaskModal extends Component {
             </Col>
           </Row>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="danger" onClick={this.props.onHide}>
-            Close
-          </Button>
-        </Modal.Footer>
       </Modal>
     );
   }

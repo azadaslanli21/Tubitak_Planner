@@ -38,10 +38,17 @@ export class AddUserModal extends Component {
           aria-labelledby="contained-modal-title-vcenter"
           centered
         >
-          <Modal.Header closeButton>
+          <Modal.Header style={{ position: 'relative' }}>
             <Modal.Title id="contained-modal-title-vcenter">
               Add User
             </Modal.Title>
+            <Button
+              variant="danger"
+              style={{ position: 'absolute', top: '1rem', right: '1rem' }}
+              onClick={this.props.onHide}
+            >
+              Close
+            </Button>
           </Modal.Header>
           <Modal.Body>
             <Row>
@@ -56,7 +63,7 @@ export class AddUserModal extends Component {
                     <Form.Control type="number" step="0.01" name="wage" required placeholder="Wage" />
                   </Form.Group>
                   <Form.Group>
-                    <Button variant="primary" type="submit">
+                    <Button variant="primary" type="submit" className="mt-3">
                       Add User
                     </Button>
                   </Form.Group>
@@ -64,9 +71,6 @@ export class AddUserModal extends Component {
               </Col>
             </Row>
           </Modal.Body>
-          <Modal.Footer>
-            <Button variant="danger" onClick={this.props.onHide}>Close</Button>
-          </Modal.Footer>
         </Modal>
       </div>
     );

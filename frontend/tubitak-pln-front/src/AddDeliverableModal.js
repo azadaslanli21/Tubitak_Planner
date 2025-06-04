@@ -44,8 +44,15 @@ export class AddDeliverableModal extends Component {
   render() {
     return (
       <Modal {...this.props} size="lg" centered>
-        <Modal.Header closeButton>
+        <Modal.Header style={{ position: 'relative' }}>
           <Modal.Title>Add Deliverable</Modal.Title>
+          <Button
+            variant="danger"
+            style={{ position: 'absolute', top: '1rem', right: '1rem' }}
+            onClick={this.props.onHide}
+          >
+            Close
+          </Button>
         </Modal.Header>
         <Modal.Body>
           <Row>
@@ -76,7 +83,7 @@ export class AddDeliverableModal extends Component {
                 </Form.Group>
 
                 <Form.Group>
-                  <Button variant="primary" type="submit">
+                  <Button variant="primary" type="submit" className="mt-3">
                     Add Deliverable
                   </Button>
                 </Form.Group>
@@ -84,11 +91,6 @@ export class AddDeliverableModal extends Component {
             </Col>
           </Row>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="danger" onClick={this.props.onHide}>
-            Close
-          </Button>
-        </Modal.Footer>
       </Modal>
     );
   }

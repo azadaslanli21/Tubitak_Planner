@@ -57,7 +57,7 @@ export default function HomePage() {
           />
         </Form.Group>
 
-        <Button type="submit">Save</Button>
+        <Button type="submit" className="mt-3">Save</Button>
       </Form>
     </Container>
   );

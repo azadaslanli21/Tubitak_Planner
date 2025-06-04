@@ -1,6 +1,6 @@
 // GanttChartPage.js
-import React, { Component } from 'react';
-import { Container, Row, Col, Form, Modal, Table } from 'react-bootstrap';
+import React, { Component, createRef } from 'react';
+import { Container, Row, Col, Form, Modal, Table, Button } from 'react-bootstrap';
 import { FrappeGantt } from 'frappe-gantt-react';
 import dayjs from 'dayjs';
 
@@ -27,12 +27,54 @@ export class GanttChartPage extends Component {
 			showTasks: true,
 			showDeliverables: true,
 		};
+		this.ganttRef = createRef();
 	}
 
 	componentDidMount() {
 		fetch(process.env.REACT_APP_API + 'project/')
 			.then(r => (r.ok ? r.json() : { start_date: '' }))
 			.then(p => this.setState({ projectStart: p.start_date || '' }, this.fetchData));
+	}
+
+	componentDidUpdate(prevProps, prevState) {
+		// Attach hover listeners after Gantt is rendered
+		if (this.ganttRef.current && this.ganttRef.current._gantt) {
+			const gantt = this.ganttRef.current._gantt;
+			// Set popup_trigger to 'manual' to prevent default click behavior
+			gantt.options.popup_trigger = 'manual';
+
+			// Remove previous listeners to avoid duplicates
+			const bars = gantt.$svg.querySelectorAll('.bar-wrapper');
+			bars.forEach(bar => {
+				bar.onmouseenter = null;
+				bar.onmouseleave = null;
+				bar.onclick = null;
+			});
+
+			bars.forEach(bar => {
+				bar.onmouseenter = e => {
+					const id = bar.getAttribute('data-id');
+					const task = gantt.get_task(id);
+					if (task) {
+						gantt.show_popup({
+							target_element: bar.querySelector('.bar'),
+							title: task.name,
+							subtitle: `${task.start} – ${task.end}`,
+							task
+						});
+					}
+				};
+				bar.onmouseleave = e => {
+					gantt.hide_popup();
+				};
+				// Also hide tooltip on click
+				bar.onclick = e => {
+					const id = bar.getAttribute('data-id');
+					const task = gantt.get_task(id);
+					this.handleBarClick(task); // trigger your modal logic
+				};
+			});
+		}
 	}
 
 	fetchData = () => {
@@ -152,6 +194,27 @@ export class GanttChartPage extends Component {
 
 	userMap = () => Object.fromEntries(this.state.users.map(u => [u.id, u.username || u.name]));
 
+	handleBarClick = bar => {
+		// Hide tooltip immediately on click
+		if (this.ganttRef.current && this.ganttRef.current._gantt) {
+			this.ganttRef.current._gantt.hide_popup();
+		}
+		const id = parseInt(bar.id.substring(bar.id.indexOf('-') + 1));
+		const type = bar.id.slice(0, 2);
+		let data;
+		if (type === 'WP') data = this.state.workPackages.find(w => w.id === id);
+		else if (type === 'T-') data = this.state.tasks.find(t => t.id === id);
+		else if (type === 'D-') data = this.state.deliverables.find(d => d.id === id);
+		this.setState({ infoItem: { type: type === 'D-' ? 'Deliverable' : (type === 'T-' ? 'Task' : 'WorkPackage'), data }, showInfo: true });
+	};
+
+	handleModalShow = () => {
+		// Hide tooltip when modal opens
+		if (this.ganttRef.current && this.ganttRef.current._gantt) {
+			this.ganttRef.current._gantt.hide_popup();
+		}
+	};
+
 	render() {
 		const {
 			ganttTasks, showInfo, infoItem,
@@ -240,39 +303,48 @@ export class GanttChartPage extends Component {
 				</Row>
 
 				<Row className="mb-3">
-					<Col sm={6} className="d-flex gap-4">
-						
-						<Form.Check
-							type="checkbox" label="Show Tasks" checked={showTasks}
-							onChange={e => this.setState({ showTasks: e.target.checked }, this.buildGanttData)}
-						/>
-						<Form.Check
-							type="checkbox" label="Show Deliverables" checked={showDeliverables}
-							onChange={e => this.setState({ showDeliverables: e.target.checked }, this.buildGanttData)}
-						/>
+					<Col sm={6} className="d-flex align-items-center">
+						<div className="form-check d-flex align-items-center" style={{ marginRight: '1.5rem' }}>
+							<Form.Check
+								type="checkbox"
+								id="showTasksCheckbox"
+								label="Show Tasks"
+								checked={showTasks}
+								onChange={e => this.setState({ showTasks: e.target.checked }, this.buildGanttData)}
+							/>
+						</div>
+						<div className="form-check d-flex align-items-center" style={{ marginRight: '1.5rem' }}>
+							<Form.Check
+								type="checkbox"
+								id="showDeliverablesCheckbox"
+								label="Show Deliverables"
+								checked={showDeliverables}
+								onChange={e => this.setState({ showDeliverables: e.target.checked }, this.buildGanttData)}
+							/>
+						</div>
 					</Col>
 				</Row>
 
 				{ganttTasks.length > 0 && (
 					<FrappeGantt
+						ref={this.ganttRef}
 						tasks={ganttTasks}
 						viewMode="Month"
 						listCellWidth="220px"
-						onClick={bar => {
-							const id = parseInt(bar.id.substring(bar.id.indexOf('-') + 1));
-							const type = bar.id.slice(0, 2);
-							let data;
-							if (type === 'WP') data = this.state.workPackages.find(w => w.id === id);
-							else if (type === 'T-') data = this.state.tasks.find(t => t.id === id);
-							else if (type === 'D-') data = this.state.deliverables.find(d => d.id === id);
-							this.setState({ infoItem: { type: type === 'D-' ? 'Deliverable' : (type === 'T-' ? 'Task' : 'WorkPackage'), data }, showInfo: true });
-						}}
+						onClick={this.handleBarClick}
 					/>
 				)}
 
-				<Modal show={showInfo} onHide={() => this.setState({ showInfo: false })} size="lg" centered>
-					<Modal.Header closeButton>
+				<Modal show={showInfo} onHide={() => this.setState({ showInfo: false })} size="lg" centered onShow={this.handleModalShow}>
+					<Modal.Header style={{ position: 'relative' }}>
 						<Modal.Title>{infoItem?.type} — {infoItem?.data?.name}</Modal.Title>
+						<Button
+							variant="danger"
+							style={{ position: 'absolute', top: '0.75rem', right: '1rem', padding: '0.25rem 0.75rem', fontSize: '0.9rem' }}
+							onClick={() => this.setState({ showInfo: false })}
+						>
+							Close
+						</Button>
 					</Modal.Header>
 					<Modal.Body>
 						{infoItem && (
