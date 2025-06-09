@@ -18,10 +18,7 @@ export class AddTaskModal extends Component {
     event.preventDefault();
     const form = event.target;
 
-    const selectedUserNames = Array.from(form.users.selectedOptions, option => option.value);
-    const selectedUserIds = this.state.users
-      .filter(u => selectedUserNames.includes(u.name))
-      .map(u => u.id);
+    const checkedUserIds = Array.from(event.target.querySelectorAll('input[name="userCheckbox"]:checked')).map(cb => parseInt(cb.value));
 
     const wpName = form.work_package.value;
     const wpId = this.state.workpackages.find(wp => wp.name === wpName)?.id;
@@ -39,7 +36,7 @@ export class AddTaskModal extends Component {
         end_date: parseInt(form.end_date.value),
         status: form.status.value,
         work_package: wpId,
-        users: selectedUserIds,
+        users: checkedUserIds,
       }),
     })
       .then(res => res.json())
@@ -105,11 +102,19 @@ export class AddTaskModal extends Component {
 
                 <Form.Group controlId="users">
                   <Form.Label>Users</Form.Label>
-                  <Form.Control as="select" multiple>
+                  <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ced4da', borderRadius: 4, padding: '0.5rem' }}>
                     {this.state.users.map(user => (
-                      <option key={user.id}>{user.name}</option>
+                      <Form.Check
+                        key={user.id}
+                        type="checkbox"
+                        id={`user-checkbox-${user.id}`}
+                        label={user.name}
+                        value={user.id}
+                        name="userCheckbox"
+                        className="mb-1"
+                      />
                     ))}
-                  </Form.Control>
+                  </div>
                 </Form.Group>
 
                 <Form.Group>

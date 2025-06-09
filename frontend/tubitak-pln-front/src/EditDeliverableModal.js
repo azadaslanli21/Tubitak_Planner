@@ -84,7 +84,7 @@ export class EditDeliverableModal extends Component {
                 </Form.Group>
 
                 <Form.Group>
-                  <Button variant="primary" type="submit">
+                  <Button variant="primary" type="submit" className="mt-3">
                     Update Deliverable
                   </Button>
                 </Form.Group>

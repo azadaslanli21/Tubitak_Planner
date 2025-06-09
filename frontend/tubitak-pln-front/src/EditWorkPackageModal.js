@@ -17,10 +17,7 @@ export class EditWorkPackageModal extends Component {
     handleSubmit(event) {
         event.preventDefault();
 
-        const selectedUserNames = Array.from(event.target.users.selectedOptions, option => option.value);
-        const selectedUserIds = this.state.users
-            .filter(user => selectedUserNames.includes(user.name))
-            .map(user => user.id);
+        const checkedUserIds = Array.from(event.target.querySelectorAll('input[name="userCheckbox"]:checked')).map(cb => parseInt(cb.value));
 
         fetch(process.env.REACT_APP_API + 'workpackages/' + this.props.wpid + '/', {
             method: 'PUT',
@@ -34,7 +31,7 @@ export class EditWorkPackageModal extends Component {
                 start_date: parseInt(event.target.start_date.value),
                 end_date: parseInt(event.target.end_date.value),
                 status: event.target.status.value,
-                users: selectedUserIds
+                users: checkedUserIds
             })
         })
             .then(res => res.json())
@@ -103,17 +100,24 @@ export class EditWorkPackageModal extends Component {
 
                                     <Form.Group controlId="users">
                                         <Form.Label>Users</Form.Label>
-                                        <Form.Control as="select" multiple defaultValue={this.props.usernames}>
-                                            {this.state.users.map(user =>
-                                                <option key={user.id} value={user.name}>
-                                                    {user.name}
-                                                </option>
-                                            )}
-                                        </Form.Control>
+                                        <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ced4da', borderRadius: 4, padding: '0.5rem' }}>
+                                            {this.state.users.map(user => (
+                                                <Form.Check
+                                                    key={user.id}
+                                                    type="checkbox"
+                                                    id={`user-checkbox-${user.id}`}
+                                                    label={user.name}
+                                                    value={user.id}
+                                                    name="userCheckbox"
+                                                    className="mb-1"
+                                                    defaultChecked={this.props.usernames && (this.props.usernames.includes(user.name) || this.props.usernames.includes(user.id))}
+                                                />
+                                            ))}
+                                        </div>
                                     </Form.Group>
 
                                     <Form.Group>
-                                        <Button variant="primary" type="submit">Update WorkPackage</Button>
+                                        <Button variant="primary" type="submit" className="mt-3">Update WorkPackage</Button>
                                     </Form.Group>
                                 </Form>
                             </Col>

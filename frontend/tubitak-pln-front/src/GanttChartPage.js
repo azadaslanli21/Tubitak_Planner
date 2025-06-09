@@ -118,7 +118,7 @@ export class GanttChartPage extends Component {
 					if (filterStatus !== 'all' && wp.status !== filterStatus) return false;
 					if (filterUser !== 'all') {
 						const ids = wp.users.map(u => (typeof u === 'object' ? u.id : u));
-						if (!ids.includes(parseInt(filterUser))) return false;
+						if (!Array.isArray(filterUser) ? !ids.includes(parseInt(filterUser)) : !ids.some(id => filterUser.includes(id))) return false;
 					}
 					const barS = pStart.add(wp.start_date - 1, 'month');
 					const barE = pStart.add(wp.end_date, 'month');
@@ -147,7 +147,7 @@ export class GanttChartPage extends Component {
 					if (filterStatus !== 'all' && t.status !== filterStatus) return false;
 					if (filterUser !== 'all') {
 						const ids = t.users.map(u => (typeof u === 'object' ? u.id : u));
-						if (!ids.includes(parseInt(filterUser))) return false;
+						if (!Array.isArray(filterUser) ? !ids.includes(parseInt(filterUser)) : !ids.some(id => filterUser.includes(id))) return false;
 					}
 					const barS = pStart.add(t.start_date - 1, 'month');
 					const barE = pStart.add(t.end_date, 'month');
@@ -255,33 +255,100 @@ export class GanttChartPage extends Component {
 					<Col sm={2}>
 						<Form.Group>
 							<Form.Label>Member</Form.Label>
-							<Form.Control
-								as="select" value={filterUser}
-								onChange={e => this.setState({ filterUser: e.target.value }, this.buildGanttData)}
-							>
-								<option value="all">All</option>
+							<div style={{ border: '1px solid #ced4da', borderRadius: 4, maxHeight: 150, overflowY: 'auto', padding: '0.5rem' }}>
+								<Form.Check
+									type="checkbox"
+									id="user-all-checkbox"
+									label="All"
+									checked={filterUser === 'all'}
+									onChange={e => {
+										if (e.target.checked) {
+											this.setState({ filterUser: 'all' }, this.buildGanttData);
+										} else {
+											this.setState({ filterUser: [] }, this.buildGanttData);
+										}
+									}}
+									className="mb-1"
+								/>
 								{users.map(u => (
-									<option key={u.id} value={u.id}>{userMap[u.id]}</option>
+									<Form.Check
+										key={u.id}
+										type="checkbox"
+										id={`user-checkbox-${u.id}`}
+										label={userMap[u.id]}
+										value={u.id}
+										checked={filterUser === 'all' ? false : filterUser.includes(u.id)}
+										disabled={false}
+										onChange={e => {
+											let newUsers;
+											if (filterUser === 'all') {
+												// Uncheck 'All' and start a new selection with the clicked box
+												newUsers = [u.id];
+											} else {
+												newUsers = Array.isArray(filterUser) ? [...filterUser] : [];
+												const userId = u.id;
+												if (e.target.checked) {
+													if (!newUsers.includes(userId)) newUsers.push(userId);
+												} else {
+													newUsers = newUsers.filter(id => id !== userId);
+												}
+											}
+											this.setState({ filterUser: newUsers.length ? newUsers : 'all' }, this.buildGanttData);
+										}}
+										className="mb-1"
+									/>
 								))}
-							</Form.Control>
+							</div>
 						</Form.Group>
 					</Col>
 
 					<Col sm={3}>
 						<Form.Group>
 							<Form.Label>WorkPackages</Form.Label>
-							<Form.Control
-								as="select" multiple
-								value={filterWPs === 'all' ? [] : filterWPs}
-								onChange={e => {
-									const sel = Array.from(e.target.selectedOptions).map(o => parseInt(o.value));
-									this.setState({ filterWPs: sel.length ? sel : 'all' }, this.buildGanttData);
-								}}
-							>
+							<div style={{ border: '1px solid #ced4da', borderRadius: 4, maxHeight: 150, overflowY: 'auto', padding: '0.5rem' }}>
+								<Form.Check
+									type="checkbox"
+									id="wp-all-checkbox"
+									label="All"
+									checked={filterWPs === 'all'}
+									onChange={e => {
+										if (e.target.checked) {
+											this.setState({ filterWPs: 'all' }, this.buildGanttData);
+										} else {
+											this.setState({ filterWPs: [] }, this.buildGanttData);
+										}
+									}}
+									className="mb-1"
+								/>
 								{workPackages.map(wp => (
-									<option key={wp.id} value={wp.id}>{wp.name}</option>
+									<Form.Check
+										key={wp.id}
+										type="checkbox"
+										id={`wp-checkbox-${wp.id}`}
+										label={wp.name}
+										value={wp.id}
+										checked={filterWPs === 'all' ? false : filterWPs.includes(wp.id)}
+										disabled={false}
+										onChange={e => {
+											let newWPs;
+											if (filterWPs === 'all') {
+												// Uncheck 'All' and start a new selection with the clicked box
+												newWPs = [wp.id];
+											} else {
+												newWPs = Array.isArray(filterWPs) ? [...filterWPs] : [];
+												const wpId = wp.id;
+												if (e.target.checked) {
+													if (!newWPs.includes(wpId)) newWPs.push(wpId);
+												} else {
+													newWPs = newWPs.filter(id => id !== wpId);
+												}
+											}
+											this.setState({ filterWPs: newWPs.length ? newWPs : 'all' }, this.buildGanttData);
+										}}
+										className="mb-1"
+									/>
 								))}
-							</Form.Control>
+							</div>
 						</Form.Group>
 					</Col>
 

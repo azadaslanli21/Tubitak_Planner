@@ -16,10 +16,7 @@ export class AddWorkPackageModal extends Component {
 
     handleSubmit(event) {
         event.preventDefault();
-        const selectedUserNames = Array.from(event.target.users.selectedOptions, option => option.value);
-        const selectedUserIds = this.state.users
-            .filter(user => selectedUserNames.includes(user.name))
-            .map(user => user.id);
+        const checkedUserIds = Array.from(event.target.querySelectorAll('input[name="userCheckbox"]:checked')).map(cb => parseInt(cb.value));
 
         fetch(process.env.REACT_APP_API + 'workpackages/', {
             method: 'POST',
@@ -33,7 +30,7 @@ export class AddWorkPackageModal extends Component {
                 start_date: parseInt(event.target.start_date.value),
                 end_date: parseInt(event.target.end_date.value),
                 status: event.target.status.value,
-                users: selectedUserIds
+                users: checkedUserIds
             })
         })
             .then(res => res.json())
@@ -88,11 +85,19 @@ export class AddWorkPackageModal extends Component {
 
                                     <Form.Group controlId="users">
                                         <Form.Label>Users</Form.Label>
-                                        <Form.Control as="select" multiple>
-                                            {this.state.users.map(user =>
-                                                <option key={user.id}>{user.name}</option>
-                                            )}
-                                        </Form.Control>
+                                        <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ced4da', borderRadius: 4, padding: '0.5rem' }}>
+                                            {this.state.users.map(user => (
+                                                <Form.Check
+                                                    key={user.id}
+                                                    type="checkbox"
+                                                    id={`user-checkbox-${user.id}`}
+                                                    label={user.name}
+                                                    value={user.id}
+                                                    name="userCheckbox"
+                                                    className="mb-1"
+                                                />
+                                            ))}
+                                        </div>
                                     </Form.Group>
 
                                     <Form.Group>

@@ -56,27 +56,14 @@ export class EditUserModal extends Component {
                 <Form onSubmit={this.handleSubmit}>
                   <Form.Group controlId="name">
                     <Form.Label>Name</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="name"
-                      required
-                      defaultValue={this.props.username}
-                      placeholder="Name"
-                    />
+                    <Form.Control type="text" name="name" required defaultValue={this.props.username} placeholder="Name" />
                   </Form.Group>
                   <Form.Group controlId="wage">
                     <Form.Label>Wage</Form.Label>
-                    <Form.Control
-                      type="number"
-                      step="0.01"
-                      name="wage"
-                      required
-                      defaultValue={this.props.userwage}
-                      placeholder="Wage"
-                    />
+                    <Form.Control type="number" step="0.01" name="wage" required defaultValue={this.props.userwage} placeholder="Wage" />
                   </Form.Group>
                   <Form.Group>
-                    <Button variant="primary" type="submit">
+                    <Button variant="primary" type="submit" className="mt-3">
                       Update User
                     </Button>
                   </Form.Group>

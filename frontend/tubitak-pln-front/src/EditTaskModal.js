@@ -18,9 +18,9 @@ export class EditTaskModal extends Component {
     event.preventDefault();
     const form = event.target;
 
-    const selectedUserNames = Array.from(form.users.selectedOptions, option => option.value);
+    const checkedUserIds = Array.from(form.querySelectorAll('input[name="userCheckbox"]:checked')).map(cb => parseInt(cb.value));
     const selectedUserIds = this.state.users
-      .filter(u => selectedUserNames.includes(u.name))
+      .filter(u => checkedUserIds.includes(u.id))
       .map(u => u.id);
 
     const wpName = form.work_package.value;
@@ -112,15 +112,24 @@ export class EditTaskModal extends Component {
 
                 <Form.Group controlId="users">
                   <Form.Label>Users</Form.Label>
-                  <Form.Control as="select" multiple defaultValue={this.props.usernames}>
+                  <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ced4da', borderRadius: 4, padding: '0.5rem' }}>
                     {this.state.users.map(u => (
-                      <option key={u.id}>{u.name}</option>
+                      <Form.Check
+                        key={u.id}
+                        type="checkbox"
+                        id={`user-checkbox-${u.id}`}
+                        label={u.name}
+                        value={u.id}
+                        name="userCheckbox"
+                        className="mb-1"
+                        defaultChecked={this.props.usernames && (this.props.usernames.includes(u.name) || this.props.usernames.includes(u.id))}
+                      />
                     ))}
-                  </Form.Control>
+                  </div>
                 </Form.Group>
 
                 <Form.Group>
-                  <Button variant="primary" type="submit">
+                  <Button variant="primary" type="submit" className="mt-3">
                     Update Task
                   </Button>
                 </Form.Group>
