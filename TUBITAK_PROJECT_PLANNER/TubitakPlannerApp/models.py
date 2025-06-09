@@ -16,7 +16,7 @@ class WorkPackage(models.Model):
     ]
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
     start_date = models.IntegerField()
     end_date = models.IntegerField()
     status = models.CharField(
@@ -37,7 +37,7 @@ class Task(models.Model):
     ]
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
     start_date = models.IntegerField()
     end_date = models.IntegerField()
     status = models.CharField(
@@ -54,8 +54,8 @@ class Task(models.Model):
 
 class Project(models.Model):
     """
-    A single-row table holding the active project’s basic info.
-    You’ll only ever have id=1, but keeping an ID makes life easy.
+    A single-row table holding the active project's basic info.
+    You'll only ever have id=1, but keeping an ID makes life easy.
     """
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)

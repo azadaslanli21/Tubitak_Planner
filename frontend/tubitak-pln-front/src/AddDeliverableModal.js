@@ -65,7 +65,7 @@ export class AddDeliverableModal extends Component {
 
                 <Form.Group controlId="description">
                   <Form.Label>Description</Form.Label>
-                  <Form.Control as="textarea" required placeholder="Description" />
+                  <Form.Control as="textarea" placeholder="Description" />
                 </Form.Group>
 
                 <Form.Group controlId="deadline">

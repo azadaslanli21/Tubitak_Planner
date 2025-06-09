@@ -66,7 +66,7 @@ export class EditDeliverableModal extends Component {
 
                 <Form.Group controlId="description">
                   <Form.Label>Description</Form.Label>
-                  <Form.Control as="textarea" required defaultValue={this.props.description} />
+                  <Form.Control as="textarea" defaultValue={this.props.description} />
                 </Form.Group>
 
                 <Form.Group controlId="deadline">
