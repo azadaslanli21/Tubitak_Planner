@@ -158,7 +158,14 @@ def taskApi(request, id=0):
 
         for user_id in task_users:
             if user_id not in wp_users:
-                return JsonResponse(f"User with ID {user_id} is not part of the WorkPackage.", status=400, safe=False)
+                try:
+                    user = User.objects.get(id=user_id)
+                    return JsonResponse(f"User {user.name} is not part of the WorkPackage.", status=400, safe=False)
+                    
+                    
+                except User.DoesNotExist:
+                    return JsonResponse(f"User with id {user_id} does not exists", status=400, safe=False)
+                    
 
         # Serialize and save the Task
         task_serializer = TaskSerializer(data=task_data)
@@ -198,7 +205,14 @@ def taskApi(request, id=0):
 
         for user_id in task_users:
             if user_id not in wp_users:
-                return JsonResponse(f"User with ID {user_id} is not part of the WorkPackage.", status=400, safe=False)
+                try:
+                    user = User.objects.get(id=user_id)
+                    return JsonResponse(f"User {user.name} is not part of the WorkPackage.", status=400, safe=False)
+                    
+                    
+                except User.DoesNotExist:
+                    return JsonResponse(f"User with id {user_id} does not exists", status=400, safe=False)
+                    
 
         task_serializer = TaskSerializer(task, data=task_data)
         if task_serializer.is_valid():
