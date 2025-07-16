@@ -55,7 +55,7 @@ def userApi(request, id=0):
 def workPackageApi(request, id=0):
     if request.method == 'GET':
         if id == 0:
-            work_packages = WorkPackage.objects.all()
+            work_packages = WorkPackage.objects.order_by('start_date', 'end_date')
             work_package_serializer = WorkPackageSerializer(work_packages, many=True)
             return JsonResponse(work_package_serializer.data, safe=False)
         else:
@@ -124,7 +124,7 @@ def workPackageApi(request, id=0):
 def taskApi(request, id=0):
     if request.method == 'GET':
         if id == 0:
-            tasks = Task.objects.all()
+            tasks = Task.objects.order_by('start_date', 'end_date')
             task_serializer = TaskSerializer(tasks, many=True)
             return JsonResponse(task_serializer.data, safe=False)
         else:
@@ -281,7 +281,7 @@ def projectApi(request, id=None):
 def deliverableApi(request, id=0):
     if request.method == 'GET':
         if id == 0:
-            deliverables = Deliverable.objects.all()
+            deliverables = Deliverable.objects.order_by('deadline')
             deliverable_serializer = DeliverableSerializer(deliverables, many=True)
             return JsonResponse(deliverable_serializer.data, safe=False)
         else:

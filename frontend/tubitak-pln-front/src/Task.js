@@ -73,7 +73,7 @@ export class Task extends Component {
         <Table className="mt-4" striped bordered hover size="sm">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>#</th>
               <th>Name</th>
               <th>Description</th>
               <th>Start</th>
@@ -85,9 +85,9 @@ export class Task extends Component {
             </tr>
           </thead>
           <tbody>
-            {tasks.map(t => (
+            {tasks.map((t, index) => (
               <tr key={t.id}>
-                <td>{t.id}</td>
+                <td>{index+1}</td>
                 <td>{t.name}</td>
                 <td>{t.description}</td>
                 <td>{t.start_date}</td>

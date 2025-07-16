@@ -67,7 +67,7 @@ export class Deliverable extends Component {
         <Table className="mt-4" striped bordered hover size="sm">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>#</th>
               <th>Name</th>
               <th>Description</th>
               <th>Deadline</th>
@@ -75,9 +75,9 @@ export class Deliverable extends Component {
             </tr>
           </thead>
           <tbody>
-            {deliverables.map(d => (
+            {deliverables.map((d, index) => (
               <tr key={d.id}>
-                <td>{d.id}</td>
+                <td>{index+1}</td>
                 <td>{d.name}</td>
                 <td>{d.description}</td>
                 <td>{d.deadline}</td>

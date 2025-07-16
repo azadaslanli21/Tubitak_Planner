@@ -84,13 +84,22 @@ export class WorkPackage extends Component {
             <div>
                 <Table className="mt-4" striped bordered hover size="sm">
                     <thead>
-                        {/* ... table headers ... */}
+                      <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Status</th>
+                        <th>Users</th>
+                        <th>Options</th>
+                      </tr>
                     </thead>
                     <tbody>
-                        {wps.map(wp =>
+                        {wps.map((wp, index) =>
                             <tr key={wp.id}>
                                 {/* ... table cells ... */}
-                                <td>{wp.id}</td>
+                                <td>{index + 1}</td>
                                 <td>{wp.name}</td>
                                 <td>{wp.description}</td>
                                 <td>{wp.start_date}</td>
