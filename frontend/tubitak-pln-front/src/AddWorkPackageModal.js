@@ -1,55 +1,51 @@
 import React, { Component } from 'react';
 import { Modal, Button, Row, Col, Form } from 'react-bootstrap';
+import apiClient from './api';
+import { toast } from 'react-toastify';
 
 export class AddWorkPackageModal extends Component {
     constructor(props) {
         super(props);
         this.state = { users: [] };
-        this.handleSubmit = this.handleSubmit.bind(this);
     }
 
-    componentDidMount() {
-        fetch(process.env.REACT_APP_API + 'users')
-            .then(response => response.json())
-            .then(data => this.setState({ users: data }));
+    async componentDidMount() {
+        try {
+            const response = await apiClient.get('users/');
+            this.setState({ users: response.data });
+        } catch (error) {
+            console.error("Could not fetch users for modal.");
+        }
     }
 
-    handleSubmit(event) {
+    handleSubmit = async (event) => {
         event.preventDefault();
         const checkedUserIds = Array.from(event.target.querySelectorAll('input[name="userCheckbox"]:checked')).map(cb => parseInt(cb.value));
 
-        fetch(process.env.REACT_APP_API + 'workpackages/', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                name: event.target.name.value,
-                description: event.target.description.value,
-                start_date: parseInt(event.target.start_date.value),
-                end_date: parseInt(event.target.end_date.value),
-                status: event.target.status.value,
-                users: checkedUserIds
-            })
-        })
-            .then(res => res.json())
-            .then(result => alert(result), error => alert('Failed'));
+        const payload = {
+            name: event.target.name.value,
+            description: event.target.description.value,
+            start_date: parseInt(event.target.start_date.value),
+            end_date: parseInt(event.target.end_date.value),
+            status: event.target.status.value,
+            users: checkedUserIds
+        };
+
+        try {
+            const response = await apiClient.post('workpackages/', payload);
+            toast.success(response.data.message);
+            this.props.onHide();
+        } catch (error) {
+            console.error("Failed to add work package.");
+        }
     }
 
     render() {
         return (
             <div className="container">
                 <Modal {...this.props} size="lg" centered>
-                    <Modal.Header style={{ position: 'relative' }}>
+                    <Modal.Header closeButton>
                         <Modal.Title>Add WorkPackage</Modal.Title>
-                        <Button
-                            variant="danger"
-                            style={{ position: 'absolute', top: '1rem', right: '1rem' }}
-                            onClick={this.props.onHide}
-                        >
-                            Close
-                        </Button>
                     </Modal.Header>
                     <Modal.Body>
                         <Row>
@@ -57,27 +53,27 @@ export class AddWorkPackageModal extends Component {
                                 <Form onSubmit={this.handleSubmit}>
                                     <Form.Group controlId="name">
                                         <Form.Label>Name</Form.Label>
-                                        <Form.Control type="text" required placeholder="Name" />
+                                        <Form.Control type="text" name="name" required placeholder="Name" />
                                     </Form.Group>
 
                                     <Form.Group controlId="description">
                                         <Form.Label>Description</Form.Label>
-                                        <Form.Control as="textarea" placeholder="Description" />
+                                        <Form.Control as="textarea" name="description" placeholder="Description" />
                                     </Form.Group>
 
                                     <Form.Group controlId="start_date">
                                         <Form.Label>Start Month</Form.Label>
-                                        <Form.Control type="number" required placeholder="Start Month" />
+                                        <Form.Control type="number" name="start_date" required placeholder="Start Month" />
                                     </Form.Group>
 
                                     <Form.Group controlId="end_date">
                                         <Form.Label>End Month</Form.Label>
-                                        <Form.Control type="number" required placeholder="End Month" />
+                                        <Form.Control type="number" name="end_date" required placeholder="End Month" />
                                     </Form.Group>
 
                                     <Form.Group controlId="status">
                                         <Form.Label>Status</Form.Label>
-                                        <Form.Control as="select">
+                                        <Form.Control as="select" name="status">
                                             <option value="active">Active</option>
                                             <option value="closed">Closed</option>
                                         </Form.Control>
@@ -90,11 +86,9 @@ export class AddWorkPackageModal extends Component {
                                                 <Form.Check
                                                     key={user.id}
                                                     type="checkbox"
-                                                    id={`user-checkbox-${user.id}`}
                                                     label={user.name}
                                                     value={user.id}
                                                     name="userCheckbox"
-                                                    className="mb-1"
                                                 />
                                             ))}
                                         </div>

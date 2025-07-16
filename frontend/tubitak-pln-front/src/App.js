@@ -13,6 +13,9 @@ import { Deliverable } from './Deliverable';
 import { FormattedBudgetPage } from './FormattedBudgetPage.js'
 import { BrowserRouter, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 function NavigationStepper() {
   const routes = ["/", "/user", "/workpackage", "/deliverable", "/task", "/gantt", "/budget", "/formattedbudget"];
   const location = useLocation();
@@ -55,6 +58,16 @@ function NavigationStepper() {
 function App() {
   return (
     <BrowserRouter>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+      />
+
+    
       <div className="container">
         <h3 className="m-3 d-flex justify-content-center">
           TUBITAK PROJECT PLANNER
