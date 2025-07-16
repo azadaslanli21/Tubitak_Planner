@@ -173,7 +173,7 @@ export class FormattedBudgetPage extends Component {
         <Table bordered size="sm" responsive>
           <thead>
             <tr>
-              <th>WP \\ User</th>
+              <th>WP // User</th>
               {allUserIds.map(uid => (
                 <th key={uid}>{this.userById(uid)?.username || this.userById(uid)?.name || uid}</th>
               ))}
