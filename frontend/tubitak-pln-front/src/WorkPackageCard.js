@@ -4,6 +4,7 @@ import { AddTaskModal } from './AddTaskModal';
 import { AddDeliverableModal } from './AddDeliverableModal';
 import { EditTaskModal } from './EditTaskModal'; 
 import { EditDeliverableModal } from './EditDeliverableModal';
+import { EditWorkPackageModal} from './EditWorkPackageModal';
 import { ConfirmModal } from './ConfirmModal';
 import apiClient from './api';
 import { toast } from 'react-toastify';
@@ -12,9 +13,13 @@ export class WorkPackageCard extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            addWpModalShow: false,
             addTaskModalShow: false,
             addDeliverableModalShow: false,
+            editWpModalShow: false,
             editTaskModalShow: false,
+
+            editingWp: null,
             editingTask: null,
             editDeliverableModalShow: false,
             editingDeliverable: null,
@@ -23,11 +28,14 @@ export class WorkPackageCard extends Component {
         };
     }
 
-
+    closeAddWpModal = () => this.setState({ addWpModalShow: false });
     closeAddTaskModal = () => this.setState({ addTaskModalShow: false });
     closeAddDeliverableModal = () => this.setState({ addDeliverableModalShow: false });
+
+    closeEditWpModal = () => this.setState({ editWpModalShow: false, editingWp: null });
     closeEditTaskModal = () => this.setState({ editTaskModalShow: false, editingTask: null });
     closeEditDeliverableModal = () => this.setState({ editDeliverableModalShow: false, editingDeliverable: null });
+
     closeConfirmDeleteModal = () => this.setState({ deletingItem: null });
 
 
@@ -79,7 +87,9 @@ export class WorkPackageCard extends Component {
                 <Card.Header as="h5" className="d-flex justify-content-between align-items-center bg-light">
                     <span><strong>{workPackage.name}</strong> (Months: {workPackage.start_date} - {workPackage.end_date})</span>
                     <div>
-                        <Button variant="outline-info" size="sm" className="mr-2">Edit WP</Button>
+                        <Button variant="outline-info" size="sm" className="mr-2" onClick={() => this.setState({ editWpModalShow: true, editingWp: workPackage })}>
+                            Edit WP
+                        </Button>
                         <Button variant="outline-danger" size="sm" onClick={() => this.handleDeleteClick(workPackage.id, 'workPackage')}>
                             Delete WP
                         </Button>
@@ -187,6 +197,8 @@ export class WorkPackageCard extends Component {
                 </Card.Body>
 
                 {/* --- Modals --- */}
+
+
                 <AddTaskModal 
                     show={this.state.addTaskModalShow}
                     onHide={this.closeAddTaskModal}
@@ -201,6 +213,16 @@ export class WorkPackageCard extends Component {
                     onDataChange={onDataChange}
                     workPackageId={workPackage.id}
                 />
+
+                {this.state.editingWp && (
+                    <EditWorkPackageModal
+                        show={this.state.editWpModalShow}
+                        onHide={this.closeEditWpModal}
+                        onDataChange={onDataChange}
+                        workPackage={this.state.editingWp}
+                        userMap={workPackage.userMap}
+                    />
+                )}
                 {this.state.editingTask && (
                     <EditTaskModal 
                         show={this.state.editTaskModalShow}
@@ -219,6 +241,7 @@ export class WorkPackageCard extends Component {
                         deliverable={this.state.editingDeliverable}
                     />
                 )}
+
                 <ConfirmModal 
                     show={!!this.state.deletingItem}
                     onClose={this.closeConfirmDeleteModal}

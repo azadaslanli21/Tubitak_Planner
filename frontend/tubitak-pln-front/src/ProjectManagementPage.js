@@ -17,7 +17,7 @@ export class ProjectManagementPage extends Component {
         this.fetchData();
     }
 
-    // --- 1. Fetch ALL data and structure it ---
+    // --- Fetch ALL data and structure it ---
     fetchData = async () => {
         try {
             // Fetch all data types in parallel
@@ -59,15 +59,7 @@ export class ProjectManagementPage extends Component {
 
         return (
             <Container fluid className="mt-4">
-                <Row>
-                    <Col>
-                        <Button variant="primary" onClick={() => this.setState({ addWpModalShow: true })}>
-                            + Add New Work Package
-                        </Button>
-                    </Col>
-                </Row>
-
-                {/* --- 2. Render a card for each Work Package --- */}
+                {/* --- Render a card for each Work Package --- */}
                 <div className="mt-4">
                     {workPackages.map(wp => (
                         <WorkPackageCard 
@@ -78,12 +70,22 @@ export class ProjectManagementPage extends Component {
                     ))}
                 </div>
 
+                <Row>
+                    <Col>
+                        <Button variant="primary" onClick={() => this.setState({ addWpModalShow: true })}>
+                            + Add New Work Package
+                        </Button>
+                    </Col>\n
+                </Row>
+
                 {/* The Add Work Package Modal is managed here */}
                 <AddWorkPackageModal 
                     show={addWpModalShow} 
                     onHide={addWpModalClose}
                     onDataChange={this.fetchData} // Pass refresh function
                 />
+
+
             </Container>
         );
     }
