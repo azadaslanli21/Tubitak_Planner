@@ -4,20 +4,19 @@ import { Button } from 'react-bootstrap';
 
 import HomePage from './HomePage';
 import { User } from './User';
-import { WorkPackage } from './WorkPackage';
-import { Task } from './Task';
 import { Navigation } from './Navigation';
 import { GanttChartPage } from './GanttChartPage';
 import { BudgetPage } from './BudgetPage';
-import { Deliverable } from './Deliverable';
 import { FormattedBudgetPage } from './FormattedBudgetPage.js'
 import { BrowserRouter, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
+
+import { ProjectManagementPage } from './ProjectManagementPage';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function NavigationStepper() {
-  const routes = ["/", "/user", "/workpackage", "/deliverable", "/task", "/gantt", "/budget", "/formattedbudget"];
+  const routes = ["/", "/user", "/project", "/gantt", "/budget", "/formattedbudget"];
   const location = useLocation();
   const navigate = useNavigate();
   const currentIndex = routes.indexOf(location.pathname);
@@ -79,9 +78,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/user" element={<User />} />
-          <Route path="/workpackage" element={<WorkPackage />} />
-          <Route path="/deliverable" element={<Deliverable />} />
-          <Route path="/task" element={<Task />} />
+          <Route path="/project" element={<ProjectManagementPage />} />
           <Route path="/gantt" element={<GanttChartPage />} />
           <Route path="/budget" element={<BudgetPage />} />
           <Route path="/formattedbudget" element={<FormattedBudgetPage />} />

@@ -16,14 +16,8 @@ export class Navigation extends Component{
                 <NavLink className="d-inline p-2 bg-dark text-white" to="/user">
                     User
                 </NavLink>
-                <NavLink className="d-inline p-2 bg-dark text-white" to="/workpackage">
-                    WorkPackage
-                </NavLink>
-                <NavLink className="d-inline p-2 bg-dark text-white" to="/deliverable">
-                    Deliverable
-                </NavLink>
-                <NavLink className="d-inline p-2 bg-dark text-white" to="/task">
-                    Task
+                <NavLink className="d-inline p-2 bg-dark text-white" to="/project">
+                    Project Management 
                 </NavLink>
                 <NavLink className="d-inline p-2 bg-dark text-white" to="/gantt">
                     Gantt Chart

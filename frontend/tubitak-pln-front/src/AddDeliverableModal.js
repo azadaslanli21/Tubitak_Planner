@@ -1,85 +1,59 @@
 import React, { Component } from 'react';
 import { Modal, Button, Row, Col, Form } from 'react-bootstrap';
+import apiClient from './api';
+import { toast } from 'react-toastify';
 
 export class AddDeliverableModal extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { workpackages: [] };
-  }
+  // The constructor and componentDidMount for fetching data can be removed.
 
-  componentDidMount() {
-    Promise.all([
-      fetch(process.env.REACT_APP_API + 'workpackages').then(res => res.json()),
-    ]).then(([wps]) => this.setState({workpackages: wps }));
-  }
-
-  handleSubmit = event => {
+  handleSubmit = async (event) => {
     event.preventDefault();
     const form = event.target;
 
-
-    const wpName = form.work_package.value;
-    const wpId = this.state.workpackages.find(wp => wp.name === wpName)?.id;
-
-    fetch(process.env.REACT_APP_API + 'deliverables/', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const payload = {
         name: form.name.value,
         description: form.description.value,
         deadline: parseInt(form.deadline.value),
-        work_package: wpId,
-      }),
-    })
-      .then(res => res.json())
-      .then(
-        result => alert(result),
-        () => alert('Failed'),
-      );
+        work_package: this.props.workPackageId, // <-- Use the ID from props
+    };
+
+    try {
+        const response = await apiClient.post('deliverables/', payload);
+        toast.success(response.data.message);
+        this.props.onDataChange(); // <-- Refresh the main page
+        this.props.onHide();       // <-- Close the modal
+    } catch (error) {
+        // Errors are handled by the global interceptor
+        console.error("Failed to add task.");
+    }
   };
 
   render() {
+    
+
     return (
       <Modal {...this.props} size="lg" centered>
-        <Modal.Header style={{ position: 'relative' }}>
+        <Modal.Header closeButton>
           <Modal.Title>Add Deliverable</Modal.Title>
-          <Button
-            variant="danger"
-            style={{ position: 'absolute', top: '1rem', right: '1rem' }}
-            onClick={this.props.onHide}
-          >
-            Close
-          </Button>
         </Modal.Header>
         <Modal.Body>
           <Row>
             <Col sm={6}>
               <Form onSubmit={this.handleSubmit}>
+                {/* Remove the WorkPackage dropdown; it's determined by props */}
                 <Form.Group controlId="name">
                   <Form.Label>Name</Form.Label>
-                  <Form.Control type="text" required placeholder="Name" />
+                  <Form.Control type="text" name="name" required placeholder="Name" />
                 </Form.Group>
 
                 <Form.Group controlId="description">
                   <Form.Label>Description</Form.Label>
-                  <Form.Control as="textarea" placeholder="Description" />
+                  <Form.Control as="textarea" name="description" placeholder="Description" />
                 </Form.Group>
-
+                
                 <Form.Group controlId="deadline">
                   <Form.Label>Deadline</Form.Label>
-                  <Form.Control type="number" required placeholder="Deadline" />
-                </Form.Group>
-
-                <Form.Group controlId="work_package">
-                  <Form.Label>WorkPackage</Form.Label>
-                  <Form.Control as="select" required>
-                    {this.state.workpackages.map(wp => (
-                      <option key={wp.id}>{wp.name}</option>
-                    ))}
-                  </Form.Control>
+                  <Form.Control type="number" name="deadline" required placeholder="Deadline" />
                 </Form.Group>
 
                 <Form.Group>

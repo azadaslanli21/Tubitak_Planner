@@ -34,6 +34,7 @@ export class AddWorkPackageModal extends Component {
         try {
             const response = await apiClient.post('workpackages/', payload);
             toast.success(response.data.message);
+            this.props.onDataChange();
             this.props.onHide();
         } catch (error) {
             console.error("Failed to add work package.");

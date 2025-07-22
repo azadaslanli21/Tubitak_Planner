@@ -34,7 +34,7 @@ urlpatterns = [
     path('project/<int:id>/', views.projectApi),  # GET, PUT, DELETE specific project by id
 
     path('deliverables/', views.deliverableApi),
-    path('deliverables/<int:id>', views.deliverableApi),
+    path('deliverables/<int:id>/', views.deliverableApi),
 
     path('budget/', views.budgetEntryApi),
 ]
