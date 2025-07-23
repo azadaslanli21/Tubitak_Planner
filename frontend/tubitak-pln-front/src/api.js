@@ -3,40 +3,85 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-// Create a configured instance of axios
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API, // Uses the API URL from your project's environment
+  baseURL: process.env.REACT_APP_API,
   headers: {
     'Accept': 'application/json',
     'Content-Type': 'application/json'
   }
 });
 
-// add jwt token if there is one to not have to change every usage of apiClient in code
+// Request interceptor to add the JWT token
 apiClient.interceptors.request.use(config => {
   const token = localStorage.getItem('access_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
-// Add a "response interceptor" to handle errors globally
+// Upgraded Response Interceptor with Token Refresh Logic ---
 apiClient.interceptors.response.use(
-  // This function is called for any successful response (status code 2xx)
   (response) => {
+    // If the request was successful, just return the response
     return response;
   },
-  // This function is called for any failed response
-  (error) => {
-    // Check if the error response has a specific error message from your Django backend
-    if (error.response && error.response.data && error.response.data.error) {
-      // Use the custom error message from your backend
-      toast.error(error.response.data.error);
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Check if the error is a 401 and haven't already retried the request
+    if (error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true; // Mark this request as retried to prevent infinite loops
+
+      try {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (!refreshToken) {
+            // If there's no refresh token, the user must log in again
+            localStorage.clear();
+            window.location.href = '/login';
+            return Promise.reject(error);
+        }
+
+        // Make a request to the refresh token endpoint
+        const response = await axios.post(`${process.env.REACT_APP_API}token/refresh/`, {
+          refresh: refreshToken
+        });
+        
+        const newAccessToken = response.data.access;
+        
+        // Save the new access token
+        localStorage.setItem('access_token', newAccessToken);
+        
+        // Update the authorization header for the original request
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        
+        // Retry the original request with the new token
+        return apiClient(originalRequest);
+
+      } catch (refreshError) {
+        // If refreshing the token also fails, the session is truly over
+        localStorage.clear();
+        window.location.href = '/login';
+        toast.error("Your session has expired. Please log in again.");
+        return Promise.reject(refreshError);
+      }
+    }
+
+    // For all other errors, display the generic error toast from your backend
+    if (error.response?.data?.error) {
+      // Use ?. for safety, in case response or data is not available
+      const errorData = error.response.data.error;
+      // The register error returns an object, so we format it.
+      if (typeof errorData === 'object') {
+        const messages = Object.entries(errorData).map(([field, msgs]) => `${field}: ${msgs.join(', ')}`);
+        toast.error(messages.join(' | '));
+      } else {
+        toast.error(errorData);
+      }
     } else {
-      // Fallback for generic network errors or other issues
       toast.error('An unexpected network error occurred.');
     }
     
-    // This makes sure the error is still passed down, so a component's .catch() can run if needed
     return Promise.reject(error);
   }
 );

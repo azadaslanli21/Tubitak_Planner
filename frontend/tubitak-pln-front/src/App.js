@@ -2,6 +2,8 @@ import logo from './logo.svg';
 import './App.css';
 import { Button } from 'react-bootstrap';
 import HomePage from './HomePage';
+import LoginPage from './LoginPage.js';
+import RegisterPage from './RegisterPage.js';
 import { User } from './User';
 import { ProjectManagementPage } from './ProjectManagementPage';
 import { Navigation } from './Navigation';
@@ -9,8 +11,6 @@ import { GanttChartPage } from './GanttChartPage';
 import { BudgetPage } from './BudgetPage';
 import { FormattedBudgetPage } from './FormattedBudgetPage.js'
 import { BrowserRouter, Route, Routes, useNavigate, useLocation, Navigate, Outlet} from 'react-router-dom';
-
-import { ProjectManagementPage } from './ProjectManagementPage';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
