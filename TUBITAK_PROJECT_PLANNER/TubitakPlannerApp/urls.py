@@ -17,6 +17,12 @@ Including another URLconf
 from django.urls import path
 from . import views
 
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenVerifyView,
+)
+
 urlpatterns = [
     # User API endpoints
     path('users/', views.userApi),  # GET all users, POST to create a user
@@ -37,5 +43,13 @@ urlpatterns = [
     path('deliverables/<int:id>', views.deliverableApi),
 
     path('budget/', views.budgetEntryApi),
+
+    # JWT endpoints
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+
+    # REGISTRATION endpoint
+    path('register/', views.registerProjectLead),
 ]
 
