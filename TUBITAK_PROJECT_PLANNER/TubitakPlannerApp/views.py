@@ -1,10 +1,37 @@
 from django.http import JsonResponse
 from rest_framework.parsers import JSONParser
 from .models import User, WorkPackage, Task, Project, Deliverable, BudgetEntry
-from .serializers import UserSerializer, WorkPackageSerializer, TaskSerializer, ProjectSerializer, DeliverableSerializer, BudgetEntrySerializer
+from .serializers import ProjectLeadRegistrationSerializer, UserSerializer, WorkPackageSerializer, TaskSerializer, ProjectSerializer, DeliverableSerializer, BudgetEntrySerializer
 from django.views.decorators.csrf import csrf_exempt
 
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from functools import wraps
+
+# DECORATOR FOR FORCING JWT AUTH
+def jwt_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return JsonResponse({'error': 'Authentication credentials were not provided.'}, status=401)
+
+        token = auth_header.split(' ')[1]
+        jwt_auth = JWTAuthentication()
+
+        try:
+            validated_token = jwt_auth.get_validated_token(token)
+            user = jwt_auth.get_user(validated_token)
+            request.user = user  # attach user to request
+        except (InvalidToken, TokenError) as e:
+            return JsonResponse({'error': 'Invalid or expired token.'}, status=401)
+
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
 # User API View
+@jwt_required
 @csrf_exempt
 def userApi(request, id=0):
     if request.method == 'GET':
@@ -51,6 +78,7 @@ def userApi(request, id=0):
             return JsonResponse({"error": "User not found."}, status=404)
 
 # WorkPackage API View
+@jwt_required
 @csrf_exempt
 def workPackageApi(request, id=0):
     if request.method == 'GET':
@@ -120,6 +148,7 @@ def workPackageApi(request, id=0):
             return JsonResponse({"error": "WorkPackage not found."}, status=404)
 
 # Task API View
+@jwt_required
 @csrf_exempt
 def taskApi(request, id=0):
     if request.method == 'GET':
@@ -230,7 +259,7 @@ def taskApi(request, id=0):
         except Task.DoesNotExist:
             return JsonResponse({"error": "Task not found."}, status=404)
 
-
+@jwt_required
 @csrf_exempt
 def projectApi(request, id=None):
     """
@@ -277,6 +306,7 @@ def projectApi(request, id=None):
     return JsonResponse({"error": f"Method {request.method} not allowed or ID mismatch."}, status=405)
 
 # Delvierable API View
+@jwt_required
 @csrf_exempt
 def deliverableApi(request, id=0):
     if request.method == 'GET':
@@ -354,6 +384,7 @@ def deliverableApi(request, id=0):
         except Deliverable.DoesNotExist:
             return JsonResponse({"error": "Deliverable not found."}, status=404)
 
+@jwt_required
 @csrf_exempt
 def budgetEntryApi(request):
     if request.method == 'GET':
@@ -400,4 +431,17 @@ def budgetEntryApi(request):
         
         return JsonResponse({"message": "Budget saved successfully!", "saved_entries": len(saved_entries)}, status=201)
 
-               
+@csrf_exempt
+def registerProjectLead(request):
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        print(data)
+        serializer = ProjectLeadRegistrationSerializer(data=data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse({"message": "User registered successfully."}, status=201)
+        else:
+            return JsonResponse({"error": serializer.errors}, status=400)
+
+    return JsonResponse({"error": "Only POST method allowed."}, status=405)

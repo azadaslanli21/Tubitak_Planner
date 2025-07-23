@@ -1,8 +1,13 @@
 import React,{Component} from 'react';
 import {NavLink} from 'react-router-dom';
-import {Navbar,Nav} from 'react-bootstrap';
+import {Navbar,Nav, Button} from 'react-bootstrap';
 
 export class Navigation extends Component{
+
+    handleLogout = () => {
+        localStorage.clear();
+        window.location.href = '/login'
+    }
 
     render(){
         return(
@@ -35,6 +40,12 @@ export class Navigation extends Component{
                     TUBITAK FORMATTED BUDGET
                 </NavLink> 
                 </Nav>
+                <Nav>
+                    <Button variant="danger" onClick={this.handleLogout}>
+                        Logout
+                    </Button>
+                </Nav>
+        
                 </Navbar.Collapse>
             </Navbar>
         )

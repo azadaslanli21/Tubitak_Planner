@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'TubitakPlannerApp.apps.TubitakplannerappConfig',
     'rest_framework',
+    'rest_framework_simplejwt',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -84,6 +85,9 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# User Login Settup
+AUTH_USER_MODEL = 'TubitakPlannerApp.ProjectLeadUser'
 
 
 # Password validation

@@ -12,6 +12,13 @@ const apiClient = axios.create({
   }
 });
 
+// add jwt token if there is one to not have to change every usage of apiClient in code
+apiClient.interceptors.request.use(config => {
+  const token = localStorage.getItem('access_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 // Add a "response interceptor" to handle errors globally
 apiClient.interceptors.response.use(
   // This function is called for any successful response (status code 2xx)
