@@ -1,14 +1,14 @@
 import logo from './logo.svg';
 import './App.css';
 import { Button } from 'react-bootstrap';
-
 import HomePage from './HomePage';
 import { User } from './User';
+import { ProjectManagementPage } from './ProjectManagementPage';
 import { Navigation } from './Navigation';
 import { GanttChartPage } from './GanttChartPage';
 import { BudgetPage } from './BudgetPage';
 import { FormattedBudgetPage } from './FormattedBudgetPage.js'
-import { BrowserRouter, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useNavigate, useLocation, Navigate, Outlet} from 'react-router-dom';
 
 import { ProjectManagementPage } from './ProjectManagementPage';
 
@@ -54,6 +54,21 @@ function NavigationStepper() {
   );
 }
 
+//NO_TOKEN => ROUTE TO LOGIN
+function RequireAuth({ children }) {
+  const location = useLocation();
+  const isAuthenticated = !!localStorage.getItem('access_token');
+  
+  if (!isAuthenticated) {
+    if (!['/login', '/register'].includes(location.pathname)) {
+      return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+    return null;
+  }
+  
+  return children || <Outlet />; 
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -71,17 +86,20 @@ function App() {
         <h3 className="m-3 d-flex justify-content-center">
           TUBITAK PROJECT PLANNER
         </h3>
-
-        <Navigation />
-        <NavigationStepper />
-
+        <RequireAuth>
+          <Navigation />
+          <NavigationStepper />
+        </RequireAuth>
+        
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/user" element={<User />} />
+          <Route path="/login" element={ <LoginPage />}/>
+          <Route path="/register" element={ <RegisterPage />}/>
+          <Route path="/" element={ <RequireAuth><HomePage /></RequireAuth>}/>
+          <Route path="/user" element={<RequireAuth><User /></RequireAuth>} />
           <Route path="/project" element={<ProjectManagementPage />} />
-          <Route path="/gantt" element={<GanttChartPage />} />
-          <Route path="/budget" element={<BudgetPage />} />
-          <Route path="/formattedbudget" element={<FormattedBudgetPage />} />
+          <Route path="/gantt" element={<RequireAuth><GanttChartPage /></RequireAuth>} />
+          <Route path="/budget" element={<RequireAuth><BudgetPage /></RequireAuth>} />
+          <Route path="/formattedbudget" element={<RequireAuth><FormattedBudgetPage /></RequireAuth>} />
         </Routes>
       </div>
     </BrowserRouter>
