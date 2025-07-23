@@ -106,7 +106,7 @@ export class WorkPackageCard extends Component {
                         
                         <div>
                             <strong>Status:</strong>{' '}
-                            <Badge variant={workPackage.status === 'active' ? 'success' : 'secondary'}>
+                            <Badge variant={workPackage.status.toLowerCase() === 'active' ? 'success' : 'danger'}>
                                 {workPackage.status}
                             </Badge>
                         </div>
@@ -138,7 +138,11 @@ export class WorkPackageCard extends Component {
                                     <td>{task.description}</td>
                                     <td>{task.start_date}</td>
                                     <td>{task.end_date}</td>
-                                    <td>{task.status}</td>
+                                    <td>
+                                        <Badge variant={task.status.toLowerCase() === 'active' ? 'success' : 'danger'}>
+                                            {task.status}
+                                        </Badge>
+                                    </td>
                                     <td>{task.users.map(uid => workPackage.userMap[uid] || uid).join(', ')}</td>
                                     <td>
                                         <ButtonToolbar>
