@@ -1,17 +1,14 @@
 import logo from './logo.svg';
 import './App.css';
 import { Button } from 'react-bootstrap';
-
 import HomePage from './HomePage';
 import LoginPage from './LoginPage.js';
 import RegisterPage from './RegisterPage.js';
 import { User } from './User';
-import { WorkPackage } from './WorkPackage';
-import { Task } from './Task';
+import { ProjectManagementPage } from './ProjectManagementPage';
 import { Navigation } from './Navigation';
 import { GanttChartPage } from './GanttChartPage';
 import { BudgetPage } from './BudgetPage';
-import { Deliverable } from './Deliverable';
 import { FormattedBudgetPage } from './FormattedBudgetPage.js'
 import { BrowserRouter, Route, Routes, useNavigate, useLocation, Navigate, Outlet} from 'react-router-dom';
 
@@ -19,7 +16,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function NavigationStepper() {
-  const routes = ["/", "/user", "/workpackage", "/deliverable", "/task", "/gantt", "/budget", "/formattedbudget"];
+  const routes = ["/", "/user", "/project", "/gantt", "/budget", "/formattedbudget"];
   const location = useLocation();
   const navigate = useNavigate();
   const currentIndex = routes.indexOf(location.pathname);
@@ -99,9 +96,7 @@ function App() {
           <Route path="/register" element={ <RegisterPage />}/>
           <Route path="/" element={ <RequireAuth><HomePage /></RequireAuth>}/>
           <Route path="/user" element={<RequireAuth><User /></RequireAuth>} />
-          <Route path="/workpackage" element={<RequireAuth><WorkPackage /></RequireAuth>} />
-          <Route path="/deliverable" element={<RequireAuth><Deliverable /></RequireAuth>} />
-          <Route path="/task" element={<RequireAuth><Task /></RequireAuth>} />
+          <Route path="/project" element={<ProjectManagementPage />} />
           <Route path="/gantt" element={<RequireAuth><GanttChartPage /></RequireAuth>} />
           <Route path="/budget" element={<RequireAuth><BudgetPage /></RequireAuth>} />
           <Route path="/formattedbudget" element={<RequireAuth><FormattedBudgetPage /></RequireAuth>} />
