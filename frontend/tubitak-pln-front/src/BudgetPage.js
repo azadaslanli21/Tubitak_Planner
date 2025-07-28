@@ -137,7 +137,7 @@ export class BudgetPage extends Component {
     return (
       <tr>
         <th>WorkPackage</th>
-        <th>User</th>
+        <th>Personnel</th>
         {range(1, maxMonth).map((m) => (
           <th key={m} className="budget-month-header">
             {projectStart ? dayjs(projectStart).add(m - 1, 'month').format('MMM YY') : m} ({m})
@@ -236,7 +236,7 @@ export class BudgetPage extends Component {
             <Table bordered size="sm" responsive>
               <thead>
                 <tr>
-                  <th>User</th>
+                  <th>Personnel</th>
                   <th>Total</th>
                 </tr>
               </thead>

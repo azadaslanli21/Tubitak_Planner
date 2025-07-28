@@ -4,7 +4,6 @@ import apiClient from './api';
 import { toast } from 'react-toastify';
 
 export class EditWorkPackageModal extends Component {
-    // We no longer need a constructor or componentDidMount to fetch users
 
     handleSubmit = async (event) => {
         event.preventDefault();
@@ -73,7 +72,7 @@ export class EditWorkPackageModal extends Component {
                                     </Form.Group>
 
                                     <Form.Group controlId="users">
-                                        <Form.Label>Users</Form.Label>
+                                        <Form.Label>Personnels</Form.Label>
                                         <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ced4da', borderRadius: 4, padding: '0.5rem' }}>
                                             {allUserIds.map(userId => (
                                                 <Form.Check

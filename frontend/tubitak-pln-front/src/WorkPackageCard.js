@@ -101,7 +101,7 @@ export class WorkPackageCard extends Component {
                         <p className="mb-2"><strong>Description:</strong> {workPackage.description || 'No description provided.'}</p>
                         
                         <div>
-                            <strong>Assigned Users:</strong> {workPackage.users.map(uid => workPackage.userMap[uid] || uid).join(', ')}
+                            <strong>Assigned Personnels:</strong> {workPackage.users.map(uid => workPackage.userMap[uid] || uid).join(', ')}
                         </div>
                         
                         <div>
@@ -126,7 +126,7 @@ export class WorkPackageCard extends Component {
                                 <th>Start Month</th>
                                 <th>End Month</th>
                                 <th>Status</th>
-                                <th>Users</th>
+                                <th>Personnels</th>
                                 <th>Options</th>
                             </tr>
                         </thead>

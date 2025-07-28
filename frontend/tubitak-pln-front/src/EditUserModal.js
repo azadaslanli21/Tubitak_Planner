@@ -40,7 +40,7 @@ export class EditUserModal extends Component {
         >
           <Modal.Header style={{ position: 'relative' }}>
             <Modal.Title id="contained-modal-title-vcenter">
-              Edit User
+              Edit Personnel
             </Modal.Title>
             <Button
               variant="danger"
@@ -64,7 +64,7 @@ export class EditUserModal extends Component {
                   </Form.Group>
                   <Form.Group>
                     <Button variant="primary" type="submit" className="mt-3">
-                      Update User
+                      Update Personnel
                     </Button>
                   </Form.Group>
                 </Form>

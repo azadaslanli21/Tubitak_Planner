@@ -254,7 +254,7 @@ export class GanttChartPage extends Component {
 
 					<Col sm={2}>
 						<Form.Group>
-							<Form.Label>Member</Form.Label>
+							<Form.Label>Personnel</Form.Label>
 							<div style={{ border: '1px solid #ced4da', borderRadius: 4, maxHeight: 150, overflowY: 'auto', padding: '0.5rem' }}>
 								<Form.Check
 									type="checkbox"
@@ -419,10 +419,19 @@ export class GanttChartPage extends Component {
 								<tbody>
 									{Object.entries(infoItem.data).map(([k, v]) => {
 										if (k === 'id') return null;
+
+										const labelMap = {
+               				    		    users: 'personnel',
+                     			    		start_date: 'start month',
+                        					end_date: 'end month'
+                				    	};
+				                    	// Use the mapped label, or the original key if not found
+                    					const label = labelMap[k] || k;
+
 										let val = v;
 										if (Array.isArray(v)) val = v.map(x => userMap[x.id ?? x] ?? x).join(', ');
 										if (typeof v === 'number' && (k === 'user' || k === 'owner')) val = userMap[v] ?? v;
-										return (<tr key={k}><th>{k}</th><td>{val}</td></tr>);
+										return (<tr key={k}><th>{label}</th><td>{val}</td></tr>);
 									})}
 								</tbody>
 							</Table>
