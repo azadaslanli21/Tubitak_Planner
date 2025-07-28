@@ -4,22 +4,74 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-// overriding fetch function to not have to include authorization in every fetch in the code
+// overrided fetch that has json refresh and auth
 const originalFetch = window.fetch;
-window.fetch = function(url, options = {}) {
-  const token = localStorage.getItem('access_token');
+window.fetch = async function (url, options = {}) {
+  const accessToken = localStorage.getItem('access_token');
+  const refreshToken = localStorage.getItem('refresh_token');
 
-  const headers = {
-    ...(options.headers || {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  const defaultHeaders = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
   };
 
-  const updatedOptions = {
+  const mergedHeaders = {
+    ...defaultHeaders,
+    ...(options.headers || {})
+  };
+
+  const finalOptions = {
     ...options,
-    headers
+    headers: mergedHeaders
   };
-  
-  return originalFetch(url, updatedOptions);
+
+  let response = await originalFetch(url, finalOptions);
+
+  if (response.status === 401 && !options._retry) {
+    if (!refreshToken) {
+      localStorage.clear();
+      window.location.href = '/login';
+      return new Promise(() => {});;
+    }
+
+    try {
+      const refreshResponse = await originalFetch(`${process.env.REACT_APP_API}token/refresh/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ refresh: refreshToken })
+      });
+
+      if (!refreshResponse.ok) {
+        throw new Error('Refresh failed');
+      }
+
+      const data = await refreshResponse.json();
+      const newAccessToken = data.access;
+      localStorage.setItem('access_token', newAccessToken);
+
+      const retryHeaders = {
+        ...mergedHeaders,
+        'Authorization': `Bearer ${newAccessToken}`
+      };
+
+      return originalFetch(url, {
+        ...options,
+        headers: retryHeaders,
+        _retry: true 
+      });
+
+    } catch (err) {
+      localStorage.clear();
+      window.location.href = '/login';
+      return new Promise(() => {});
+    }
+  }
+
+  return response;
 };
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
