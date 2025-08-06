@@ -23,8 +23,8 @@ pip install oracledb          # Oracle
 
 ```
 
-#### DataBase setup
-First settup an external database and a user that can change it - process depends on the DB.
+#### DataBase setup (Ignore if using SQLite)
+First setup an external database and a user that can change it - process depends on the DB.
 Depending on the DB that you want to use change .env file next to manage.py to include DATABASE_URL for your desired DB.
 Examples:
 ```ini
@@ -34,7 +34,7 @@ DATABASE_URL=oracle://USER:PASS@localhost:1521/your_db
 ```
 If no DATABASE_URL is provided in .env file default behaviour is to use SQLite DB.
 
-#### Migrating your data to a new database
+#### Migrating your data to a new database (Ignore if using SQLite)
 
 1. **Dump data from current DB**
 
