@@ -14,7 +14,55 @@ This is a full-stack web application using Django (backend) and React (frontend)
 pip install django
 pip install djangorestframework
 pip install django-cors-headers
+pip install djangorestframework-simplejwt
+pip install django-environ
+#install according to the DB you are using
+pip install psycopg2-binary   # PostgreSQL
+pip install mysqlclient       # MySQL/MariaDB
+pip install oracledb          # Oracle
+
 ```
+
+#### DataBase setup
+First settup an external database and a user that can change it - process depends on the DB.
+Depending on the DB that you want to use change .env file next to manage.py to include DATABASE_URL for your desired DB.
+Examples:
+```ini
+DATABASE_URL=postgres://USER:PASS@localhost:5432/your_db
+DATABASE_URL=mysql://USER:PASS@localhost:3306/your_db
+DATABASE_URL=oracle://USER:PASS@localhost:1521/your_db
+```
+If no DATABASE_URL is provided in .env file default behaviour is to use SQLite DB.
+
+#### Migrating your data to a new database
+
+1. **Dump data from current DB**
+
+    ```bash
+   python manage.py dumpdata \
+     --natural-foreign --natural-primary \
+     --exclude contenttypes --exclude auth.permission \
+     --indent 2 > data.json
+   ```
+
+2. **Update your `.env` `DATABASE_URL` to point at the new DB**
+
+   ```ini
+   DATABASE_URL=postgres://your_user:your_pass@localhost:5432/your_db
+   ```
+
+3. **Apply the schema**
+
+   ```bash
+   python manage.py migrate
+   ```
+
+4. **Load your data dump**
+
+   ```bash
+   python manage.py loaddata data.json
+   ```
+
 
 #### Run the backend server
 

@@ -1,0 +1,637 @@
+[
+{
+  "model": "sessions.session",
+  "pk": "zvxig9p93py3kacg3il7gmz7wml2qn34",
+  "fields": {
+    "session_data": ".eJxVjDsOwyAQBe9CHSF-i3HK9D4DYlkITiKQjF1FuXtsyUXSzsx7b-bDtha_9bT4mdiVaXb5ZRjiM9VD0CPUe-Ox1XWZkR8JP23nU6P0up3t30EJvexrkWREoxxBBuOE0ThIRAyjVTJHZ8FpFxGEJTB6VHYQJC2AUJTNjhX7fAHOTjbX:1ueVQe:zLH-NBoMEhGlyssZxptlzLRA1cNLeuUGAWIE9w__Htw",
+    "expire_date": "2025-08-06T09:06:24.453Z"
+  }
+},
+{
+  "model": "TubitakPlannerApp.projectleaduser",
+  "fields": {
+    "password": "pbkdf2_sha256$600000$Px4T35lPSVPJQQXX5Wpfka$leDg6BUHvT1vawnYyE+oLUIFp7ElIE3o1nA/0tAZ/as=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "andrej",
+    "first_name": "",
+    "last_name": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-07-23T08:58:17.494Z",
+    "email": "andrejmisaa@gmail.com",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "TubitakPlannerApp.projectleaduser",
+  "fields": {
+    "password": "pbkdf2_sha256$600000$L7aXhMF1GjiskEG4HNyLAc$WqSV8Z3h4tCoFuO/I1tUea55KnGwmTgj75h2Of/cTVo=",
+    "last_login": "2025-07-23T09:06:24.446Z",
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-07-23T09:00:28.154Z",
+    "email": "admin@tubitak.com",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "TubitakPlannerApp.projectleaduser",
+  "fields": {
+    "password": "pbkdf2_sha256$870000$jnWbdVRMbhIoZHitcJBcgV$DkQItgCCmGOzWrr5KcZHgG9rFq5vDDGBgAU4cu/7Xqo=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "azadaslanli",
+    "first_name": "",
+    "last_name": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-07-24T19:54:54.131Z",
+    "email": "azadaslanli123@gmail.com",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "TubitakPlannerApp.user",
+  "pk": 1,
+  "fields": {
+    "name": "AZAD ASLANLI II",
+    "wage": "17000.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.user",
+  "pk": 2,
+  "fields": {
+    "name": "HASAN",
+    "wage": "34000.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.user",
+  "pk": 4,
+  "fields": {
+    "name": "AKIF",
+    "wage": "32000.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.user",
+  "pk": 6,
+  "fields": {
+    "name": "Anvar Mikili",
+    "wage": "30000.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.workpackage",
+  "pk": 1,
+  "fields": {
+    "name": "WP1",
+    "description": "aaaa",
+    "start_date": 1,
+    "end_date": 7,
+    "status": "active",
+    "users": [
+      1,
+      2
+    ]
+  }
+},
+{
+  "model": "TubitakPlannerApp.workpackage",
+  "pk": 2,
+  "fields": {
+    "name": "WP2",
+    "description": "deneme 2",
+    "start_date": 4,
+    "end_date": 11,
+    "status": "closed",
+    "users": [
+      2
+    ]
+  }
+},
+{
+  "model": "TubitakPlannerApp.workpackage",
+  "pk": 5,
+  "fields": {
+    "name": "WP3",
+    "description": "my new wp which leads people to do",
+    "start_date": 11,
+    "end_date": 14,
+    "status": "active",
+    "users": [
+      1,
+      2,
+      4
+    ]
+  }
+},
+{
+  "model": "TubitakPlannerApp.workpackage",
+  "pk": 12,
+  "fields": {
+    "name": "adfadsf",
+    "description": "adadf",
+    "start_date": 1,
+    "end_date": 3,
+    "status": "active",
+    "users": [
+      1,
+      4
+    ]
+  }
+},
+{
+  "model": "TubitakPlannerApp.task",
+  "pk": 1,
+  "fields": {
+    "name": "task1",
+    "description": "dsadasm",
+    "start_date": 1,
+    "end_date": 3,
+    "status": "active",
+    "work_package": 1,
+    "users": [
+      2
+    ]
+  }
+},
+{
+  "model": "TubitakPlannerApp.task",
+  "pk": 3,
+  "fields": {
+    "name": "task2",
+    "description": "fdsfgsdgsdfg",
+    "start_date": 1,
+    "end_date": 5,
+    "status": "active",
+    "work_package": 1,
+    "users": [
+      1,
+      2
+    ]
+  }
+},
+{
+  "model": "TubitakPlannerApp.task",
+  "pk": 4,
+  "fields": {
+    "name": "task3",
+    "description": "fdffdbhghgd",
+    "start_date": 3,
+    "end_date": 7,
+    "status": "active",
+    "work_package": 1,
+    "users": [
+      1,
+      2
+    ]
+  }
+},
+{
+  "model": "TubitakPlannerApp.task",
+  "pk": 5,
+  "fields": {
+    "name": "task4",
+    "description": "fdffdbhghgd",
+    "start_date": 8,
+    "end_date": 11,
+    "status": "active",
+    "work_package": 2,
+    "users": [
+      2
+    ]
+  }
+},
+{
+  "model": "TubitakPlannerApp.task",
+  "pk": 6,
+  "fields": {
+    "name": "task5",
+    "description": "rewwgfs",
+    "start_date": 12,
+    "end_date": 12,
+    "status": "active",
+    "work_package": 5,
+    "users": [
+      2,
+      4
+    ]
+  }
+},
+{
+  "model": "TubitakPlannerApp.project",
+  "pk": 1,
+  "fields": {
+    "name": "Project 1",
+    "start_date": "2020-01-01"
+  }
+},
+{
+  "model": "TubitakPlannerApp.deliverable",
+  "pk": 2,
+  "fields": {
+    "name": "First Deliverable",
+    "description": "dummydesc",
+    "deadline": 3,
+    "work_package": 1
+  }
+},
+{
+  "model": "TubitakPlannerApp.deliverable",
+  "pk": 4,
+  "fields": {
+    "name": "Mid output",
+    "description": "Output of program in mid process",
+    "deadline": 6,
+    "work_package": 2
+  }
+},
+{
+  "model": "TubitakPlannerApp.deliverable",
+  "pk": 5,
+  "fields": {
+    "name": "Technical",
+    "description": "All back functions must be ready",
+    "deadline": 11,
+    "work_package": 5
+  }
+},
+{
+  "model": "TubitakPlannerApp.deliverable",
+  "pk": 8,
+  "fields": {
+    "name": "Test_DE",
+    "description": "",
+    "deadline": 2,
+    "work_package": 12
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1353,
+  "fields": {
+    "work_package": 1,
+    "user": 1,
+    "month": 1,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1354,
+  "fields": {
+    "work_package": 1,
+    "user": 1,
+    "month": 2,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1355,
+  "fields": {
+    "work_package": 1,
+    "user": 1,
+    "month": 3,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1356,
+  "fields": {
+    "work_package": 1,
+    "user": 1,
+    "month": 4,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1357,
+  "fields": {
+    "work_package": 1,
+    "user": 1,
+    "month": 5,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1358,
+  "fields": {
+    "work_package": 1,
+    "user": 1,
+    "month": 6,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1359,
+  "fields": {
+    "work_package": 1,
+    "user": 1,
+    "month": 7,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1360,
+  "fields": {
+    "work_package": 1,
+    "user": 2,
+    "month": 2,
+    "contribution": "0.50"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1361,
+  "fields": {
+    "work_package": 1,
+    "user": 2,
+    "month": 3,
+    "contribution": "0.50"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1362,
+  "fields": {
+    "work_package": 1,
+    "user": 2,
+    "month": 4,
+    "contribution": "0.50"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1363,
+  "fields": {
+    "work_package": 1,
+    "user": 2,
+    "month": 5,
+    "contribution": "0.50"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1364,
+  "fields": {
+    "work_package": 1,
+    "user": 2,
+    "month": 6,
+    "contribution": "0.50"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1365,
+  "fields": {
+    "work_package": 1,
+    "user": 2,
+    "month": 7,
+    "contribution": "0.50"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1366,
+  "fields": {
+    "work_package": 2,
+    "user": 2,
+    "month": 5,
+    "contribution": "0.50"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1367,
+  "fields": {
+    "work_package": 2,
+    "user": 2,
+    "month": 6,
+    "contribution": "0.50"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1368,
+  "fields": {
+    "work_package": 2,
+    "user": 2,
+    "month": 7,
+    "contribution": "0.50"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1369,
+  "fields": {
+    "work_package": 2,
+    "user": 2,
+    "month": 9,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1370,
+  "fields": {
+    "work_package": 2,
+    "user": 2,
+    "month": 10,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1371,
+  "fields": {
+    "work_package": 2,
+    "user": 2,
+    "month": 11,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1372,
+  "fields": {
+    "work_package": 1,
+    "user": 2,
+    "month": 1,
+    "contribution": "0.50"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1373,
+  "fields": {
+    "work_package": 2,
+    "user": 2,
+    "month": 4,
+    "contribution": "0.50"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1374,
+  "fields": {
+    "work_package": 2,
+    "user": 2,
+    "month": 8,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1375,
+  "fields": {
+    "work_package": 5,
+    "user": 1,
+    "month": 11,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1376,
+  "fields": {
+    "work_package": 5,
+    "user": 1,
+    "month": 12,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1377,
+  "fields": {
+    "work_package": 5,
+    "user": 1,
+    "month": 13,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1378,
+  "fields": {
+    "work_package": 5,
+    "user": 1,
+    "month": 14,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1379,
+  "fields": {
+    "work_package": 5,
+    "user": 2,
+    "month": 11,
+    "contribution": "0.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1380,
+  "fields": {
+    "work_package": 5,
+    "user": 4,
+    "month": 12,
+    "contribution": "0.75"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1381,
+  "fields": {
+    "work_package": 5,
+    "user": 4,
+    "month": 13,
+    "contribution": "0.75"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1382,
+  "fields": {
+    "work_package": 5,
+    "user": 4,
+    "month": 14,
+    "contribution": "0.75"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1383,
+  "fields": {
+    "work_package": 5,
+    "user": 4,
+    "month": 11,
+    "contribution": "0.75"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1384,
+  "fields": {
+    "work_package": 5,
+    "user": 2,
+    "month": 12,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1385,
+  "fields": {
+    "work_package": 5,
+    "user": 2,
+    "month": 13,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "TubitakPlannerApp.budgetentry",
+  "pk": 1386,
+  "fields": {
+    "work_package": 5,
+    "user": 2,
+    "month": 14,
+    "contribution": "1.00"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 1,
+  "fields": {
+    "action_time": "2025-07-23T09:05:39.836Z",
+    "user": [
+      "admin"
+    ],
+    "content_type": [
+      "TubitakPlannerApp",
+      "projectleaduser"
+    ],
+    "object_id": "2",
+    "object_repr": "andrej3",
+    "action_flag": 3,
+    "change_message": ""
+  }
+}
+]
