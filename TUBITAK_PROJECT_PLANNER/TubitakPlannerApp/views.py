@@ -30,6 +30,19 @@ def jwt_required(view_func):
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
+# HELPER FOR GETTING CURRENT PROJECT
+def get_current_project(request):
+    pid = request.headers.get('X-Project-Id') or request.GET.get('project_id')
+    if not pid:
+        return None, JsonResponse({"error": "Project context required (X-Project-Id header or ?project_id=)."}, status=400)
+    try:
+        proj = Project.objects.get(id=pid, owner=request.user)
+    except Project.DoesNotExist:
+        return None, JsonResponse({"error": "Project not found or not yours."}, status=404)
+
+    return proj, None
+
+
 # User API View
 @jwt_required
 @csrf_exempt
@@ -81,14 +94,17 @@ def userApi(request, id=0):
 @jwt_required
 @csrf_exempt
 def workPackageApi(request, id=0):
+    project, err = get_current_project(request)
+    if err: return err
+
     if request.method == 'GET':
         if id == 0:
-            work_packages = WorkPackage.objects.order_by('start_date', 'end_date')
+            work_packages = WorkPackage.objects.filter(project=project).order_by('start_date', 'end_date')
             work_package_serializer = WorkPackageSerializer(work_packages, many=True)
             return JsonResponse(work_package_serializer.data, safe=False)
         else:
             try:
-                work_package = WorkPackage.objects.get(id=id)
+                work_package = WorkPackage.objects.get(id=id, project=project)
                 work_package_serializer = WorkPackageSerializer(work_package)
                 return JsonResponse(work_package_serializer.data)
             except WorkPackage.DoesNotExist:
@@ -96,6 +112,7 @@ def workPackageApi(request, id=0):
 
     elif request.method == 'POST':
         work_package_data = JSONParser().parse(request)
+        work_package_data['project'] = project.id
         
         # Add users to WorkPackage
         user_ids = work_package_data.get('users', [])
@@ -118,7 +135,7 @@ def workPackageApi(request, id=0):
     elif request.method == 'PUT':
         work_package_data = JSONParser().parse(request)
         try:
-            work_package = WorkPackage.objects.get(id=id)
+            work_package = WorkPackage.objects.get(id=id, project=project)
         except WorkPackage.DoesNotExist:
             return JsonResponse({"error": "WorkPackage not found."}, status=404)
 
@@ -132,6 +149,7 @@ def workPackageApi(request, id=0):
             except User.DoesNotExist:
                 return JsonResponse({"error": f"User with ID {user_id} not found."}, status=404)
 
+        work_package_data['project'] = project.id
         work_package_serializer = WorkPackageSerializer(work_package, data=work_package_data)
         if work_package_serializer.is_valid():
             work_package_serializer.save()
@@ -141,7 +159,7 @@ def workPackageApi(request, id=0):
 
     elif request.method == 'DELETE':
         try:
-            work_package = WorkPackage.objects.get(id=id)
+            work_package = WorkPackage.objects.get(id=id, project=project)
             work_package.delete()
             return JsonResponse({"message": "WorkPackage deleted successfully!"}, safe=False)
         except WorkPackage.DoesNotExist:
@@ -151,14 +169,17 @@ def workPackageApi(request, id=0):
 @jwt_required
 @csrf_exempt
 def taskApi(request, id=0):
+    project, err = get_current_project(request)
+    if err: return err
+
     if request.method == 'GET':
         if id == 0:
-            tasks = Task.objects.order_by('start_date', 'end_date')
+            tasks = Task.objects.filter(work_package__project=project).order_by('start_date', 'end_date')
             task_serializer = TaskSerializer(tasks, many=True)
             return JsonResponse(task_serializer.data, safe=False)
         else:
             try:
-                task = Task.objects.get(id=id)
+                task = Task.objects.get(id=id, work_package__project=project)
                 task_serializer = TaskSerializer(task)
                 return JsonResponse(task_serializer.data)
             except Task.DoesNotExist:
@@ -170,7 +191,7 @@ def taskApi(request, id=0):
         
         # Validate the work package
         try:
-            work_package = WorkPackage.objects.get(id=task_data['work_package'])
+            work_package = WorkPackage.objects.get(id=task_data['work_package'], project=project)
         except WorkPackage.DoesNotExist:
             return JsonResponse({"error": "WorkPackage not found."}, status=404)
 
@@ -192,11 +213,8 @@ def taskApi(request, id=0):
                 try:
                     user = User.objects.get(id=user_id)
                     return JsonResponse({"error": f"User {user.name} is not part of the WorkPackage."}, status=400)
-                    
-                    
                 except User.DoesNotExist:
                     return JsonResponse({"error": f"User with id {user_id} does not exists"}, status=404)
-                    
 
         # Serialize and save the Task
         task_serializer = TaskSerializer(data=task_data)
@@ -211,13 +229,13 @@ def taskApi(request, id=0):
     elif request.method == 'PUT':
         task_data = JSONParser().parse(request)
         try:
-            task = Task.objects.get(id=id)
+            task = Task.objects.get(id=id, work_package__project=project)
         except Task.DoesNotExist:
             return JsonResponse({"error": "Task not found."}, status=404)
 
         # Fetch the associated WorkPackage
         try:
-            work_package = WorkPackage.objects.get(id=task_data['work_package'])
+            work_package = WorkPackage.objects.get(id=task_data['work_package'], project=project)
         except WorkPackage.DoesNotExist:
             return JsonResponse({"error": "WorkPackage not found."}, status=404)
 
@@ -239,11 +257,8 @@ def taskApi(request, id=0):
                 try:
                     user = User.objects.get(id=user_id)
                     return JsonResponse({"error": f"User {user.name} is not part of the WorkPackage."}, status=400)
-                    
-                    
                 except User.DoesNotExist:
                     return JsonResponse({"error": f"User with id {user_id} does not exists"}, status=404)
-                    
 
         task_serializer = TaskSerializer(task, data=task_data)
         if task_serializer.is_valid():
@@ -253,70 +268,75 @@ def taskApi(request, id=0):
 
     elif request.method == 'DELETE':
         try:
-            task = Task.objects.get(id=id)
+            task = Task.objects.get(id=id, work_package__project=project)
             task.delete()
             return JsonResponse({"message": "Task deleted successfully!"}, safe=False)
         except Task.DoesNotExist:
             return JsonResponse({"error": "Task not found."}, status=404)
 
+# API FOR ALL PROJECTS
 @jwt_required
 @csrf_exempt
 def projectApi(request, id=None):
-    """
-    GET    → returns the single project (404 if none yet)
-    POST   → create if none exists
-    PUT    → update the existing one
-    """
     if request.method == 'GET':
-        try:
-            proj = Project.objects.get(pk=id if id else 1)
-            return JsonResponse(ProjectSerializer(proj).data, safe=False)
-        except Project.DoesNotExist:
-            return JsonResponse({"error": "No project set."}, status=404)
-
-    if request.method == 'POST':
-        if id is not None:
-            return JsonResponse({"error": "POST request should not include an ID in the URL."}, status=400)
-        data = JSONParser().parse(request)
-        if Project.objects.filter(pk=1).exists():
-            return JsonResponse({"error": "Project already exists. Use PUT to update."}, status=400)
-        
-        ser = ProjectSerializer(data=data)
-        if ser.is_valid():
-            ser.save()
-            return JsonResponse(ser.data, status=201, safe=False)
-        return JsonResponse({"error": "Invalid project data. Please check the fields."}, status=400)
-
-    if request.method == 'PUT':
-        if id is None:
-            id = 1
-        
-        data = JSONParser().parse(request)
-        try:
-            proj = Project.objects.get(pk=id)
-        except Project.DoesNotExist:
-            return JsonResponse({"error": "Project not found to update."}, status=404)
-        
-        ser = ProjectSerializer(proj, data=data)
-        if ser.is_valid():
-            ser.save()
-            return JsonResponse(ser.data, safe=False)
-        return JsonResponse({"error": "Invalid project data. Please check the fields."}, status=400)
+        qs = Project.objects.filter(owner=request.user).order_by('-created_at')
+        return JsonResponse(ProjectSerializer(qs, many=True).data, safe=False)
     
-    return JsonResponse({"error": f"Method {request.method} not allowed or ID mismatch."}, status=405)
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        serializer = ProjectSerializer(data=data)
+
+        if serializer.is_valid():
+            proj = Project(owner=request.user, **serializer.validated_data)
+            proj.save()
+            return JsonResponse(ProjectSerializer(proj).data, status=201, safe=False)
+        return JsonResponse({"error": serializer.errors}, status=400)
+    
+    return JsonResponse({"error": "Method not allowed."}, status=405)
+
+#API FOR SINGLE PROJECT
+@jwt_required
+@csrf_exempt
+def projectDetailApi(request, id):
+    try:
+        project = Project.objects.get(id=id, owner=request.user)
+    except Project.DoesNotExist:
+        return JsonResponse({"error": "Project not found or not yours."}, status=404)
+
+    if request.method == 'GET':
+        return JsonResponse(ProjectSerializer(project).data, safe=False)
+
+    elif request.method == 'PUT':
+        data = JSONParser().parse(request)
+        serializer = ProjectSerializer(project, data=data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, safe=False)
+        return JsonResponse({"error": serializer.errors}, status=400)
+
+    elif request.method == 'DELETE':
+        project.delete()
+        return JsonResponse({"message": "Project deleted successfully!"}, status=200)
+
+    return JsonResponse({"error": "Method not allowed."}, status=405)
+
 
 # Delvierable API View
 @jwt_required
 @csrf_exempt
 def deliverableApi(request, id=0):
+    project, err = get_current_project(request)
+    if err: return err
+
     if request.method == 'GET':
         if id == 0:
-            deliverables = Deliverable.objects.order_by('deadline')
+            deliverables = Deliverable.objects.filter(work_package__project=project).order_by('deadline')
             deliverable_serializer = DeliverableSerializer(deliverables, many=True)
             return JsonResponse(deliverable_serializer.data, safe=False)
         else:
             try:
-                deliverable = Deliverable.objects.get(id=id)
+                deliverable = Deliverable.objects.get(id=id, work_package__project=project)
                 deliverable_serializer = DeliverableSerializer(deliverable)
                 return JsonResponse(deliverable_serializer.data)
             except Deliverable.DoesNotExist:
@@ -327,7 +347,7 @@ def deliverableApi(request, id=0):
         
         # Validate the work package
         try:
-            work_package = WorkPackage.objects.get(id=deliverable_data['work_package'])
+            work_package = WorkPackage.objects.get(id=deliverable_data['work_package'], project=project)
         except WorkPackage.DoesNotExist:
             return JsonResponse({"error": "WorkPackage not found."}, status=404)
 
@@ -336,7 +356,7 @@ def deliverableApi(request, id=0):
         wp_start_month = work_package.start_date
         wp_end_month = work_package.end_date
 
-        if deliverable_deadline< wp_start_month or deliverable_deadline > wp_end_month:
+        if deliverable_deadline < wp_start_month or deliverable_deadline > wp_end_month:
             return JsonResponse({"error": "Deliverable deadline cannot exceed WorkPackage months."}, status=400)
 
         
@@ -352,13 +372,13 @@ def deliverableApi(request, id=0):
     elif request.method == 'PUT':
         deliverable_data = JSONParser().parse(request)
         try:
-            deliverable = Deliverable.objects.get(id=id)
+            deliverable = Deliverable.objects.get(id=id, work_package__project=project)
         except Deliverable.DoesNotExist:
             return JsonResponse({"error": "Deliverable not found."}, status=404)
 
         # Fetch the associated WorkPackage
         try:
-            work_package = WorkPackage.objects.get(id=deliverable_data['work_package'])
+            work_package = WorkPackage.objects.get(id=deliverable_data['work_package'], project=project)
         except WorkPackage.DoesNotExist:
             return JsonResponse({"error": "WorkPackage not found."}, status=404)
 
@@ -367,7 +387,7 @@ def deliverableApi(request, id=0):
         wp_start_month = work_package.start_date
         wp_end_month = work_package.end_date
 
-        if deliverable_deadline< wp_start_month or deliverable_deadline > wp_end_month:
+        if deliverable_deadline < wp_start_month or deliverable_deadline > wp_end_month:
             return JsonResponse({"error": "Deliverable deadline cannot exceed WorkPackage months."}, status=400)
 
         deliverable_serializer = DeliverableSerializer(deliverable, data=deliverable_data)
@@ -378,7 +398,7 @@ def deliverableApi(request, id=0):
 
     elif request.method == 'DELETE':
         try:
-            deliverable = Deliverable.objects.get(id=id)
+            deliverable = Deliverable.objects.get(id=id, work_package__project=project)
             deliverable.delete()
             return JsonResponse({"message": "Deliverable deleted successfully!"}, safe=False)
         except Deliverable.DoesNotExist:
@@ -387,8 +407,11 @@ def deliverableApi(request, id=0):
 @jwt_required
 @csrf_exempt
 def budgetEntryApi(request):
+    project, err = get_current_project(request)
+    if err: return err
+    
     if request.method == 'GET':
-        budget_entries = BudgetEntry.objects.all()
+        budget_entries = BudgetEntry.objects.filter(work_package__project=project)
         budget_entry_serializer = BudgetEntrySerializer(budget_entries, many=True)
         
         # transform data for frontend compatibility (key-value pair)
@@ -402,7 +425,7 @@ def budgetEntryApi(request):
         data = JSONParser().parse(request)
         
         # consider a better way to partially update the budget entries
-        BudgetEntry.objects.all().delete()
+        BudgetEntry.objects.filter(work_package__project=project).delete()
         
         saved_entries = []
         errors = []
@@ -410,8 +433,9 @@ def budgetEntryApi(request):
         for key, value in data.items():
             try:
                 wp_id, user_id, month = key.split('_')
+                wp = WorkPackage.objects.get(id=int(wp_id), project=project)
                 entry_data = {
-                    'work_package': int(wp_id),
+                    'work_package': wp.id,
                     'user': int(user_id),
                     'month': int(month),
                     'contribution': value

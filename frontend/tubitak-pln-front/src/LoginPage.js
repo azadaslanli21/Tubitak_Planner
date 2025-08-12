@@ -53,7 +53,8 @@ export default function LoginPage() {
         localStorage.setItem('access_token', data.access);
         localStorage.setItem('refresh_token', data.refresh);
       })
-      .catch(() => {
+      .catch((e) => {
+        console.log(e);
         setMessage('Wrong credentials');
       }).then(() => {
         if (localStorage.getItem('access_token')) navigate('/');
