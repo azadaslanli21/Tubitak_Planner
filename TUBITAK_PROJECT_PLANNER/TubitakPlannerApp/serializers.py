@@ -7,6 +7,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id',
                   'name',
                   'wage')
+        read_only_fields = ['id']
 
 
 class WorkPackageSerializer(serializers.ModelSerializer):

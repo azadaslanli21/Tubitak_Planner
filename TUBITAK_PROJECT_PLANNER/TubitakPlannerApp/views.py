@@ -49,12 +49,12 @@ def get_current_project(request):
 def userApi(request, id=0):
     if request.method == 'GET':
         if id == 0:
-            users = User.objects.all()
+            users = User.objects.filter(project_lead=request.user).all()
             user_serializer = UserSerializer(users, many=True)
             return JsonResponse(user_serializer.data, safe=False)
         else:
             try:
-                user = User.objects.get(id=id)
+                user = User.objects.get(id=id, project_lead=request.user)
                 user_serializer = UserSerializer(user)
                 return JsonResponse(user_serializer.data)
             except User.DoesNotExist:
@@ -64,27 +64,27 @@ def userApi(request, id=0):
         user_data = JSONParser().parse(request)
         user_serializer = UserSerializer(data=user_data)
         if user_serializer.is_valid():
-            user_serializer.save()
+            user_serializer.save(project_lead=request.user)  
             return JsonResponse({"message": "User added successfully!"}, safe=False)
         return JsonResponse({"error": "Invalid data provided. Please check the fields."}, status=400)
 
     elif request.method == 'PUT':
         user_data = JSONParser().parse(request)
         try:
-            user = User.objects.get(id=id)
+            user = User.objects.get(id=id, project_lead=request.user)
         except User.DoesNotExist:
             return JsonResponse({"error": "User not found."}, status=404)
 
         user_serializer = UserSerializer(user, data=user_data)
         if user_serializer.is_valid():
-            user_serializer.save()
+            user_serializer.save(project_lead=request.user) 
             return JsonResponse({"message": "User updated successfully!"}, safe=False)
         return JsonResponse({"error": "Invalid data provided. Please check the fields."}, status=400)
 
 
     elif request.method == 'DELETE':
         try:
-            user = User.objects.get(id=id)
+            user = User.objects.get(id=id, project_lead=request.user)
             user.delete()
             return JsonResponse({"message": "User deleted successfully!"}, safe=False)
         except User.DoesNotExist:
