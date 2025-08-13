@@ -69,10 +69,24 @@ function RequireAuth({ children }) {
   return children || <Outlet />; 
 }
 
+// REQUIRE SELECTED PROJECT => redirect to Home ("/") to pick/create one
+function RequireProject({ children }) {
+  const location = useLocation();
+  const projectId = localStorage.getItem('project_id');
+
+  // Pages that should be accessible without a selected project
+  const passthrough = ['/login', '/register', '/'];
+
+  if (!projectId && !passthrough.includes(location.pathname)) {
+    // send them to Home to pick/create a project
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
+  return children || <Outlet />;
+}
+
 function App() {
   return (
     <BrowserRouter>
-
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -81,29 +95,35 @@ function App() {
         pauseOnHover
       />
 
-    
       <div className="container">
         <h3 className="m-3 d-flex justify-content-center">
           TUBITAK PROJECT PLANNER
         </h3>
+
+        {/* Show nav only when authed AND a project is selected */}
         <RequireAuth>
-          <Navigation />
-          <NavigationStepper />
+          <RequireProject>
+            <Navigation />
+            <NavigationStepper />
+          </RequireProject>
         </RequireAuth>
-        
+
         <Routes>
-          <Route path="/login" element={ <LoginPage />}/>
-          <Route path="/register" element={ <RegisterPage />}/>
-          <Route path="/" element={ <RequireAuth><HomePage /></RequireAuth>}/>
-          <Route path="/user" element={<RequireAuth><User /></RequireAuth>} />
-          <Route path="/project" element={<ProjectManagementPage />} />
-          <Route path="/gantt" element={<RequireAuth><GanttChartPage /></RequireAuth>} />
-          <Route path="/budget" element={<RequireAuth><BudgetPage /></RequireAuth>} />
-          <Route path="/formattedbudget" element={<RequireAuth><FormattedBudgetPage /></RequireAuth>} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+
+          <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
+
+          <Route path="/user" element={<RequireAuth><RequireProject><User /></RequireProject></RequireAuth>} />
+          <Route path="/project" element={<RequireAuth><RequireProject><ProjectManagementPage /></RequireProject></RequireAuth>} />
+          <Route path="/gantt" element={<RequireAuth><RequireProject><GanttChartPage /></RequireProject></RequireAuth>} />
+          <Route path="/budget" element={<RequireAuth><RequireProject><BudgetPage /></RequireProject></RequireAuth>} />
+          <Route path="/formattedbudget" element={<RequireAuth><RequireProject><FormattedBudgetPage /></RequireProject></RequireAuth>} />
         </Routes>
       </div>
     </BrowserRouter>
   );
 }
+
 
 export default App;

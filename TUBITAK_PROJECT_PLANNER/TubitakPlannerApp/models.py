@@ -10,6 +10,7 @@ class User(models.Model):
     id= models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     wage = models.DecimalField(max_digits=10, decimal_places=2)
+    project_lead = models.ForeignKey(ProjectLeadUser, on_delete=models.CASCADE, related_name='users')
 
     def __str__(self):
         return self.name
@@ -30,11 +31,11 @@ class WorkPackage(models.Model):
         choices=STATUS_CHOICES,
         default='active',
     )
+    project = models.ForeignKey('Project', on_delete=models.CASCADE, related_name='work_packages')
     users = models.ManyToManyField(User, related_name='work_packages')
 
     def __str__(self):
         return self.name
-
 
 class Task(models.Model):
     STATUS_CHOICES = [
@@ -59,16 +60,16 @@ class Task(models.Model):
 
 
 class Project(models.Model):
-    """
-    A single-row table holding the active project's basic info.
-    You'll only ever have id=1, but keeping an ID makes life easy.
-    """
     id = models.AutoField(primary_key=True)
+    owner = models.ForeignKey(ProjectLeadUser, on_delete=models.CASCADE, related_name='projects')
     name = models.CharField(max_length=255)
     start_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Mega:
+        unique_together = ('owner', 'name')
 
     def __str__(self):
-        return self.name
+        return f"{self.name} (Owner: {self.owner.username})"
     
 class Deliverable(models.Model) :
     id = models.AutoField(primary_key=True)

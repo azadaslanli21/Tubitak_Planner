@@ -7,6 +7,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id',
                   'name',
                   'wage')
+        read_only_fields = ['id']
 
 
 class WorkPackageSerializer(serializers.ModelSerializer):
@@ -18,6 +19,7 @@ class WorkPackageSerializer(serializers.ModelSerializer):
                   'start_date',
                   'end_date',
                   'status',
+                  'project',
                   'users') 
         
         
@@ -37,6 +39,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Project
         fields = ['id', 'name', 'start_date']   
+        read_only_fields = ['id']
         
 class DeliverableSerializer(serializers.ModelSerializer):
     class Meta:

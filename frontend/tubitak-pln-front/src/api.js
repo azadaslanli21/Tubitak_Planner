@@ -11,9 +11,13 @@ const apiClient = axios.create({
   }
 });
 
-// Request interceptor to add the JWT token
+// Request interceptor to add the JWT token and project ID to the headers
 apiClient.interceptors.request.use(config => {
   const token = localStorage.getItem('access_token');
+  const projcetId = localStorage.getItem('project_id');
+  if (projcetId) {
+    config.headers['X-Project-Id'] = projcetId; // Add project ID to headers
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

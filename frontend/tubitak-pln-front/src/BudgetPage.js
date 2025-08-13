@@ -22,7 +22,7 @@ export class BudgetPage extends Component {
 
   /* ---------------- data loading ---------------- */
   componentDidMount() {
-    fetch(process.env.REACT_APP_API + 'project/')
+    fetch(process.env.REACT_APP_API + 'projects/' + localStorage.getItem('project_id'))
       .then((r) => (r.ok ? r.json() : { start_date: '' }))
       .then((proj) => {
         this.setState({ projectStart: proj.start_date });

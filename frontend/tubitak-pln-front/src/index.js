@@ -9,11 +9,13 @@ const originalFetch = window.fetch;
 window.fetch = async function (url, options = {}) {
   const accessToken = localStorage.getItem('access_token');
   const refreshToken = localStorage.getItem('refresh_token');
+  const project_id = localStorage.getItem('project_id');
 
   const defaultHeaders = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
-    ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
+    ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
+    ...(project_id ? { 'X-Project-Id': project_id } : {})
   };
 
   const mergedHeaders = {
