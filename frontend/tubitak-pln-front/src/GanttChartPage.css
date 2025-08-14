@@ -23,16 +23,4 @@
 	fill: #afcfc4 !important;
 }
 
-/* RED square for Deliverables */
-.bar-deliverable .bar {
-	fill: red !important;
-	width: 10px !important;
-	/* override the 4 px default */
-	height: 25px !important;
-	transform: translateY(6px);
-	/* centre the square in the row */
-}
 
-input[type="checkbox"]:checked {
-	accent-color: #28a745;
-}

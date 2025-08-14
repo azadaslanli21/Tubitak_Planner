@@ -37,45 +37,76 @@ export class GanttChartPage extends Component {
 	}
 
 	componentDidUpdate(prevProps, prevState) {
-		// Attach hover listeners after Gantt is rendered
-		if (this.ganttRef.current && this.ganttRef.current._gantt) {
-			const gantt = this.ganttRef.current._gantt;
-			// Set popup_trigger to 'manual' to prevent default click behavior
-			gantt.options.popup_trigger = 'manual';
-
-			// Remove previous listeners to avoid duplicates
-			const bars = gantt.$svg.querySelectorAll('.bar-wrapper');
-			bars.forEach(bar => {
-				bar.onmouseenter = null;
-				bar.onmouseleave = null;
-				bar.onclick = null;
-			});
-
-			bars.forEach(bar => {
-				bar.onmouseenter = e => {
-					const id = bar.getAttribute('data-id');
-					const task = gantt.get_task(id);
-					if (task) {
-						gantt.show_popup({
-							target_element: bar.querySelector('.bar'),
-							title: task.name,
-							subtitle: `${task.start} – ${task.end}`,
-							task
-						});
-					}
-				};
-				bar.onmouseleave = e => {
-					gantt.hide_popup();
-				};
-				// Also hide tooltip on click
-				bar.onclick = e => {
-					const id = bar.getAttribute('data-id');
-					const task = gantt.get_task(id);
-					this.handleBarClick(task); // trigger your modal logic
-				};
-			});
-		}
+        // --- THIS IS THE FIX ---
+        // We wrap the logic in a setTimeout to ensure the Gantt chart has finished rendering
+		setTimeout(() => {
+			if (this.ganttRef.current && this.ganttRef.current._gantt) {
+				const gantt = this.ganttRef.current._gantt;
+				gantt.options.popup_trigger = 'manual';
+	
+				const bars = gantt.$svg.querySelectorAll('.bar-wrapper');
+				bars.forEach(bar => {
+					bar.onmouseenter = e => {
+						const id = bar.getAttribute('data-id');
+						const task = gantt.get_task(id);
+						if (task) {
+							gantt.show_popup({
+								target_element: bar.querySelector('.bar'),
+								title: task.name,
+								subtitle: `${task.start} – ${task.end}`,
+								task
+							});
+						}
+					};
+					bar.onmouseleave = e => {
+						gantt.hide_popup();
+					};
+					bar.onclick = e => {
+						const id = bar.getAttribute('data-id');
+						const task = gantt.get_task(id);
+						this.handleBarClick(task);
+					};
+				});
+	
+				this.drawDeliverableMarkers();
+			}
+		}, 0); // A 0ms timeout defers execution until the browser is ready
 	}
+
+	drawDeliverableMarkers = () => {
+		const gantt = this.ganttRef.current._gantt;
+		const { projectStart, deliverables, showDeliverables } = this.state;
+		const pStart = dayjs(projectStart);
+
+		gantt.$svg.querySelectorAll('.deliverable-marker').forEach(marker => marker.remove());
+
+		if (!showDeliverables || !projectStart) return;
+
+		const ganttBody = gantt.$svg.querySelector('.gantt-body');
+		if (!ganttBody) return;
+
+		deliverables.forEach(del => {
+			const parentBar = gantt.$svg.querySelector(`.bar-wrapper[data-id="WP-${del.work_package}"]`);
+			if (!parentBar) return;
+
+			const deadlineDate = pStart.add(del.deadline - 1, 'month').toDate();
+			const xPos = gantt.date_to_x(deadlineDate);
+
+			const yPos = parseFloat(parentBar.getAttribute('y'));
+			const barHeight = parseFloat(parentBar.querySelector('.bar').getAttribute('height'));
+
+			const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+			line.setAttribute('x1', xPos);
+			line.setAttribute('y1', yPos - 2);
+			line.setAttribute('x2', xPos);
+			line.setAttribute('y2', yPos + barHeight + 2);
+			line.setAttribute('stroke', '#dc3545');
+			line.setAttribute('stroke-width', '2');
+			line.setAttribute('class', 'deliverable-marker');
+
+			ganttBody.appendChild(line);
+		});
+	};
 
 	fetchData = () => {
 		Promise.all([
@@ -98,107 +129,77 @@ export class GanttChartPage extends Component {
 	};
 
 	buildGanttData = () => {
-		const {
-			projectStart, workPackages, tasks, deliverables,
-			filterStatus, filterUser, filterWPs,
-			showWorkPackages, showTasks, showDeliverables
-		} = this.state;
-		if (!projectStart) return;
+    	const {
+        	projectStart, workPackages, tasks,
+        	filterStatus, filterUser, filterWPs,
+        	showWorkPackages, showTasks
+    	} = this.state;
+    	if (!projectStart) return;
 
-		const pStart = dayjs(projectStart);
-		const gantt = [];
-		const wpIdToBarId = {};
+    	const pStart = dayjs(projectStart);
+    	const gantt = [];
+    	const wpIdToBarId = {};
 
-		const wpAllowed = id => filterWPs === 'all' || filterWPs.includes(id);
+    	const wpAllowed = id => filterWPs === 'all' || filterWPs.includes(id);
 
-		if (showWorkPackages) {
-			workPackages
-				.filter(wp => {
-					if (!wpAllowed(wp.id)) return false;
-					if (filterStatus !== 'all' && wp.status !== filterStatus) return false;
-					if (filterUser !== 'all') {
-						const ids = wp.users.map(u => (typeof u === 'object' ? u.id : u));
-						if (!Array.isArray(filterUser) ? !ids.includes(parseInt(filterUser)) : !ids.some(id => filterUser.includes(id))) return false;
-					}
-					const barS = pStart.add(wp.start_date - 1, 'month');
-					const barE = pStart.add(wp.end_date, 'month');
-					return this.inRange(barS, barE);
-				})
-				.forEach(wp => {
-					const barS = pStart.add(wp.start_date - 1, 'month');
-					const barE = pStart.add(wp.end_date, 'month');
-					const bar = {
-						id: `WP-${wp.id}`,
-						name: wp.name,
-						start: barS.format('YYYY-MM-DD'),
-						end: barE.format('YYYY-MM-DD'),
-						custom_class: 'bar-wp',
-						progress: 100
-					};
-					gantt.push(bar);
-					wpIdToBarId[wp.id] = bar.id;
-				});
-		}
+    	workPackages.forEach(wp => {
+        	const isWpAllowedByFilter = wpAllowed(wp.id) &&
+            	(filterStatus === 'all' || wp.status === filterStatus) &&
+            	(filterUser === 'all' || wp.users.some(userId => Array.isArray(filterUser) ? filterUser.includes(userId) : parseInt(filterUser) === userId));
+        
+        	if (showWorkPackages && isWpAllowedByFilter) {
+        	    const barS = pStart.add(wp.start_date - 1, 'month');
+        	    const barE = pStart.add(wp.end_date, 'month');
+        	    if (this.inRange(barS, barE)) {
+            	    const bar = {
+                	    id: `WP-${wp.id}`,
+                	    name: wp.name,
+                	    start: barS.format('YYYY-MM-DD'),
+                    	end: barE.format('YYYY-MM-DD'),
+                    	custom_class: 'bar-wp',
+                    	progress: 100
+                	};
+                	gantt.push(bar);
+                	wpIdToBarId[wp.id] = bar.id;
+            	}
+        	}
 
-		if (showTasks) {
-			tasks
-				.filter(t => {
-					if (!wpIdToBarId[t.work_package]) return false;
-					if (filterStatus !== 'all' && t.status !== filterStatus) return false;
-					if (filterUser !== 'all') {
-						const ids = t.users.map(u => (typeof u === 'object' ? u.id : u));
-						if (!Array.isArray(filterUser) ? !ids.includes(parseInt(filterUser)) : !ids.some(id => filterUser.includes(id))) return false;
-					}
-					const barS = pStart.add(t.start_date - 1, 'month');
-					const barE = pStart.add(t.end_date, 'month');
-					return this.inRange(barS, barE);
-				})
-				.forEach(t => {
-					const barS = pStart.add(t.start_date - 1, 'month');
-					const barE = pStart.add(t.end_date, 'month');
-					gantt.push({
-						id: `T-${t.id}`,
-						name: t.name,
-						start: barS.format('YYYY-MM-DD'),
-						end: barE.format('YYYY-MM-DD'),
-						parent: wpIdToBarId[t.work_package],
-						custom_class: 'bar-task',
-						progress: 100
-					});
-				});
-		}
+        	if (showTasks && wpIdToBarId[wp.id]) {
+            	tasks
+                	.filter(t => t.work_package === wp.id)
+                	.forEach(t => {
+                    	const isTaskAllowedByFilter = (filterStatus === 'all' || t.status === filterStatus) &&
+                        	(filterUser === 'all' || t.users.some(userId => Array.isArray(filterUser) ? filterUser.includes(userId) : parseInt(filterUser) === userId));
+                    
+                    	if (isTaskAllowedByFilter) {
+                        	const barS = pStart.add(t.start_date - 1, 'month');
+                        	const barE = pStart.add(t.end_date, 'month');
+                        	if (this.inRange(barS, barE)) {
+                            	gantt.push({
+                                	id: `T-${t.id}`,
+                                	name: t.name,
+                                	start: barS.format('YYYY-MM-DD'),
+                                	end: barE.format('YYYY-MM-DD'),
+                                	parent: wpIdToBarId[t.work_package],
+                                	custom_class: 'bar-task',
+                                	progress: 100
+                            	});
+                        	}
+                    	}
+                	});
+        	}
+    	});
 
-		if (showDeliverables) {
-			deliverables
-				.filter(d => {
-					if (filterUser !== 'all') return false; // if needed, you can assign users to deliverables
-					if (!wpAllowed(d.work_package)) return false;
-					const deadline = pStart.add(d.deadline - 1, 'month');
-					return this.inRange(deadline, deadline);
-				})
-				.forEach(d => {
-					const deadline = pStart.add(d.deadline - 1, 'month');
-					gantt.push({
-						id: `D-${d.id}`,
-						name: d.name,
-						start: deadline.format('YYYY-MM-DD'),
-						end: deadline.format('YYYY-MM-DD'),
-						custom_class: 'bar-deliverable',
-						progress: 0
-					});
-				});
-		}
-
-		this.setState({ ganttTasks: gantt });
+    	this.setState({ ganttTasks: gantt });
 	};
 
 	userMap = () => Object.fromEntries(this.state.users.map(u => [u.id, u.username || u.name]));
 
 	handleBarClick = bar => {
-		// Hide tooltip immediately on click
 		if (this.ganttRef.current && this.ganttRef.current._gantt) {
 			this.ganttRef.current._gantt.hide_popup();
 		}
+		if (!bar || !bar.id) return;
 		const id = parseInt(bar.id.substring(bar.id.indexOf('-') + 1));
 		const type = bar.id.slice(0, 2);
 		let data;
@@ -209,7 +210,6 @@ export class GanttChartPage extends Component {
 	};
 
 	handleModalShow = () => {
-		// Hide tooltip when modal opens
 		if (this.ganttRef.current && this.ganttRef.current._gantt) {
 			this.ganttRef.current._gantt.hide_popup();
 		}
@@ -282,7 +282,6 @@ export class GanttChartPage extends Component {
 										onChange={e => {
 											let newUsers;
 											if (filterUser === 'all') {
-												// Uncheck 'All' and start a new selection with the clicked box
 												newUsers = [u.id];
 											} else {
 												newUsers = Array.isArray(filterUser) ? [...filterUser] : [];
@@ -332,7 +331,6 @@ export class GanttChartPage extends Component {
 										onChange={e => {
 											let newWPs;
 											if (filterWPs === 'all') {
-												// Uncheck 'All' and start a new selection with the clicked box
 												newWPs = [wp.id];
 											} else {
 												newWPs = Array.isArray(filterWPs) ? [...filterWPs] : [];
@@ -370,7 +368,7 @@ export class GanttChartPage extends Component {
 				</Row>
 
 				<Row className="mb-3">
-					<Col sm={6} className="d-flex align-items-center">
+					<Col sm={6} className="d-flex align-items-center" style={{ marginRight: '1.5rem' }}>
 						<div className="form-check d-flex align-items-center" style={{ marginRight: '1.5rem' }}>
 							<Form.Check
 								type="checkbox"
@@ -386,7 +384,7 @@ export class GanttChartPage extends Component {
 								id="showDeliverablesCheckbox"
 								label="Show Deliverables"
 								checked={showDeliverables}
-								onChange={e => this.setState({ showDeliverables: e.target.checked }, this.buildGanttData)}
+								onChange={e => this.setState({ showDeliverables: e.target.checked })}
 							/>
 						</div>
 					</Col>
@@ -429,8 +427,6 @@ export class GanttChartPage extends Component {
 						)}
 					</Modal.Body>
 				</Modal>
-
-
 			</Container>
 		);
 	}
