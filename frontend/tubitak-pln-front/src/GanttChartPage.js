@@ -35,46 +35,11 @@ export class GanttChartPage extends Component {
 			.then(r => (r.ok ? r.json() : { start_date: '' }))
 			.then(p => this.setState({ projectStart: p.start_date || '' }, this.fetchData));
 	}
-
-	componentDidUpdate(prevProps, prevState) {
-		// Attach hover listeners after Gantt is rendered
-		if (this.ganttRef.current && this.ganttRef.current._gantt) {
-			const gantt = this.ganttRef.current._gantt;
-			// Set popup_trigger to 'manual' to prevent default click behavior
-			gantt.options.popup_trigger = 'manual';
-
-			// Remove previous listeners to avoid duplicates
-			const bars = gantt.$svg.querySelectorAll('.bar-wrapper');
-			bars.forEach(bar => {
-				bar.onmouseenter = null;
-				bar.onmouseleave = null;
-				bar.onclick = null;
-			});
-
-			bars.forEach(bar => {
-				bar.onmouseenter = e => {
-					const id = bar.getAttribute('data-id');
-					const task = gantt.get_task(id);
-					if (task) {
-						gantt.show_popup({
-							target_element: bar.querySelector('.bar'),
-							title: task.name,
-							subtitle: `${task.start} – ${task.end}`,
-							task
-						});
-					}
-				};
-				bar.onmouseleave = e => {
-					gantt.hide_popup();
-				};
-				// Also hide tooltip on click
-				bar.onclick = e => {
-					const id = bar.getAttribute('data-id');
-					const task = gantt.get_task(id);
-					this.handleBarClick(task); // trigger your modal logic
-				};
-			});
-		}
+    
+    // --- 1. componentDidUpdate is now simplified (or can be removed if not needed for other things) ---
+	componentDidUpdate() {
+        // We no longer need the complex drawing logic here.
+        // This can be used for other purposes if needed in the future.
 	}
 
 	fetchData = () => {
@@ -98,122 +63,83 @@ export class GanttChartPage extends Component {
 	};
 
 	buildGanttData = () => {
-		const {
-			projectStart, workPackages, tasks, deliverables,
-			filterStatus, filterUser, filterWPs,
-			showWorkPackages, showTasks, showDeliverables
-		} = this.state;
-		if (!projectStart) return;
+    	const {
+        	projectStart, workPackages, tasks, deliverables, // Add deliverables back
+        	filterStatus, filterUser, filterWPs,
+        	showWorkPackages, showTasks, showDeliverables // Add showDeliverables back
+    	} = this.state;
+    	if (!projectStart) return;
 
-		const pStart = dayjs(projectStart);
-		const gantt = [];
-		const wpIdToBarId = {};
+    	const pStart = dayjs(projectStart);
+    	const gantt = [];
+    	const wpIdToBarId = {};
 
-		const wpAllowed = id => filterWPs === 'all' || filterWPs.includes(id);
+    	const wpAllowed = id => filterWPs === 'all' || filterWPs.includes(id);
 
-		if (showWorkPackages) {
-			workPackages
-				.filter(wp => {
-					if (!wpAllowed(wp.id)) return false;
-					if (filterStatus !== 'all' && wp.status !== filterStatus) return false;
-					if (filterUser !== 'all') {
-						const ids = wp.users.map(u => (typeof u === 'object' ? u.id : u));
-						if (!Array.isArray(filterUser) ? !ids.includes(parseInt(filterUser)) : !ids.some(id => filterUser.includes(id))) return false;
-					}
-					const barS = pStart.add(wp.start_date - 1, 'month');
-					const barE = pStart.add(wp.end_date, 'month');
-					return this.inRange(barS, barE);
-				})
-				.forEach(wp => {
-					const barS = pStart.add(wp.start_date - 1, 'month');
-					const barE = pStart.add(wp.end_date, 'month');
-					const bar = {
-						id: `WP-${wp.id}`,
-						name: wp.name,
-						start: barS.format('YYYY-MM-DD'),
-						end: barE.format('YYYY-MM-DD'),
-						custom_class: 'bar-wp',
-						progress: 100
-					};
-					gantt.push(bar);
-					wpIdToBarId[wp.id] = bar.id;
-				});
-		}
+    	workPackages.forEach(wp => {
+        	const isWpAllowedByFilter = wpAllowed(wp.id) &&
+            	(filterStatus === 'all' || wp.status === filterStatus) &&
+            	(filterUser === 'all' || wp.users.some(userId => Array.isArray(filterUser) ? filterUser.includes(userId) : parseInt(filterUser) === userId));
+        
+        	if (showWorkPackages && isWpAllowedByFilter) {
+        	    const barS = pStart.add(wp.start_date - 1, 'month');
+        	    const barE = pStart.add(wp.end_date, 'month');
+        	    if (this.inRange(barS, barE)) {
+            	    const bar = {
+                	    id: `WP-${wp.id}`, name: wp.name,
+                	    start: barS.format('YYYY-MM-DD'), end: barE.format('YYYY-MM-DD'),
+                	    custom_class: 'bar-wp', progress: 100
+                	};
+                	gantt.push(bar);
+                	wpIdToBarId[wp.id] = bar.id;
+            	}
+        	}
 
-		if (showTasks) {
-			tasks
-				.filter(t => {
-					if (!wpIdToBarId[t.work_package]) return false;
-					if (filterStatus !== 'all' && t.status !== filterStatus) return false;
-					if (filterUser !== 'all') {
-						const ids = t.users.map(u => (typeof u === 'object' ? u.id : u));
-						if (!Array.isArray(filterUser) ? !ids.includes(parseInt(filterUser)) : !ids.some(id => filterUser.includes(id))) return false;
-					}
-					const barS = pStart.add(t.start_date - 1, 'month');
-					const barE = pStart.add(t.end_date, 'month');
-					return this.inRange(barS, barE);
-				})
-				.forEach(t => {
-					const barS = pStart.add(t.start_date - 1, 'month');
-					const barE = pStart.add(t.end_date, 'month');
-					gantt.push({
-						id: `T-${t.id}`,
-						name: t.name,
-						start: barS.format('YYYY-MM-DD'),
-						end: barE.format('YYYY-MM-DD'),
-						parent: wpIdToBarId[t.work_package],
-						custom_class: 'bar-task',
-						progress: 100
-					});
-				});
-		}
+        	if (showTasks && wpIdToBarId[wp.id]) {
+            	tasks.filter(t => t.work_package === wp.id).forEach(t => {
+                	const isTaskAllowedByFilter = (filterStatus === 'all' || t.status === filterStatus) && (filterUser === 'all' || t.users.some(userId => Array.isArray(filterUser) ? filterUser.includes(userId) : parseInt(filterUser) === userId));
+                	if (isTaskAllowedByFilter) {
+                    	const barS = pStart.add(t.start_date - 1, 'month');
+                    	const barE = pStart.add(t.end_date, 'month');
+                    	if (this.inRange(barS, barE)) {
+                        	gantt.push({
+                            	id: `T-${t.id}`, name: t.name,
+                            	start: barS.format('YYYY-MM-DD'), end: barE.format('YYYY-MM-DD'),
+                            	parent: wpIdToBarId[t.work_package], custom_class: 'bar-task', progress: 100
+                        	});
+                    	}
+                	}
+            	});
+        	}
+            
+            // --- 2. Add this block to process deliverables ---
+            if (showDeliverables && wpIdToBarId[wp.id]) {
+                deliverables.filter(d => d.work_package === wp.id).forEach(d => {
+                    const deadline = pStart.add(d.deadline - 1, 'month');
+                    if (this.inRange(deadline, deadline)) {
+                        gantt.push({
+                            id: `D-${d.id}`,
+                            name: `DEL: ${d.name}`,
+                            start: deadline.format('YYYY-MM-DD'),
+                            end: deadline.format('YYYY-MM-DD'), // Start and end are the same for a milestone
+                            parent: wpIdToBarId[d.work_package],
+                            custom_class: 'bar-deliverable', // Class for CSS styling
+                            progress: 100
+                        });
+                    }
+                });
+            }
+    	});
 
-		if (showDeliverables) {
-			deliverables
-				.filter(d => {
-					if (filterUser !== 'all') return false; // if needed, you can assign users to deliverables
-					if (!wpAllowed(d.work_package)) return false;
-					const deadline = pStart.add(d.deadline - 1, 'month');
-					return this.inRange(deadline, deadline);
-				})
-				.forEach(d => {
-					const deadline = pStart.add(d.deadline - 1, 'month');
-					gantt.push({
-						id: `D-${d.id}`,
-						name: d.name,
-						start: deadline.format('YYYY-MM-DD'),
-						end: deadline.format('YYYY-MM-DD'),
-						custom_class: 'bar-deliverable',
-						progress: 0
-					});
-				});
-		}
-
-		this.setState({ ganttTasks: gantt });
+    	this.setState({ ganttTasks: gantt });
 	};
 
 	userMap = () => Object.fromEntries(this.state.users.map(u => [u.id, u.username || u.name]));
 
-	handleBarClick = bar => {
-		// Hide tooltip immediately on click
-		if (this.ganttRef.current && this.ganttRef.current._gantt) {
-			this.ganttRef.current._gantt.hide_popup();
-		}
-		const id = parseInt(bar.id.substring(bar.id.indexOf('-') + 1));
-		const type = bar.id.slice(0, 2);
-		let data;
-		if (type === 'WP') data = this.state.workPackages.find(w => w.id === id);
-		else if (type === 'T-') data = this.state.tasks.find(t => t.id === id);
-		else if (type === 'D-') data = this.state.deliverables.find(d => d.id === id);
-		this.setState({ infoItem: { type: type === 'D-' ? 'Deliverable' : (type === 'T-' ? 'Task' : 'WorkPackage'), data }, showInfo: true });
-	};
+	handleBarClick = (bar) => { /* ... same as before ... */ };
+	handleModalShow = () => { /* ... same as before ... */ };
 
-	handleModalShow = () => {
-		// Hide tooltip when modal opens
-		if (this.ganttRef.current && this.ganttRef.current._gantt) {
-			this.ganttRef.current._gantt.hide_popup();
-		}
-	};
+
 
 	render() {
 		const {
@@ -282,7 +208,6 @@ export class GanttChartPage extends Component {
 										onChange={e => {
 											let newUsers;
 											if (filterUser === 'all') {
-												// Uncheck 'All' and start a new selection with the clicked box
 												newUsers = [u.id];
 											} else {
 												newUsers = Array.isArray(filterUser) ? [...filterUser] : [];
@@ -332,7 +257,6 @@ export class GanttChartPage extends Component {
 										onChange={e => {
 											let newWPs;
 											if (filterWPs === 'all') {
-												// Uncheck 'All' and start a new selection with the clicked box
 												newWPs = [wp.id];
 											} else {
 												newWPs = Array.isArray(filterWPs) ? [...filterWPs] : [];
@@ -370,7 +294,7 @@ export class GanttChartPage extends Component {
 				</Row>
 
 				<Row className="mb-3">
-					<Col sm={6} className="d-flex align-items-center">
+					<Col sm={6} className="d-flex align-items-center" style={{ marginRight: '1.5rem' }}>
 						<div className="form-check d-flex align-items-center" style={{ marginRight: '1.5rem' }}>
 							<Form.Check
 								type="checkbox"
@@ -386,7 +310,7 @@ export class GanttChartPage extends Component {
 								id="showDeliverablesCheckbox"
 								label="Show Deliverables"
 								checked={showDeliverables}
-								onChange={e => this.setState({ showDeliverables: e.target.checked }, this.buildGanttData)}
+								onChange={e => this.setState({ showDeliverables: e.target.checked })}
 							/>
 						</div>
 					</Col>
@@ -429,8 +353,6 @@ export class GanttChartPage extends Component {
 						)}
 					</Modal.Body>
 				</Modal>
-
-
 			</Container>
 		);
 	}

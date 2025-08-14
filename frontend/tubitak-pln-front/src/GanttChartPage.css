@@ -23,16 +23,31 @@
 	fill: #afcfc4 !important;
 }
 
-/* RED square for Deliverables */
-.bar-deliverable .bar {
-	fill: red !important;
-	width: 10px !important;
-	/* override the 4 px default */
-	height: 25px !important;
-	transform: translateY(6px);
-	/* centre the square in the row */
+/* --- Add these rules to GanttChartPage.css --- */
+
+/* Target the main fill of the deliverable bar */
+.gantt .bar-deliverable .bar {
+    fill: #dc3545 !important; /* A bootstrap red color */
+    stroke: #dc3545 !important;
 }
 
-input[type="checkbox"]:checked {
-	accent-color: #28a745;
+/* Make the bar very thin to look like a line/milestone */
+/* The !important tag is needed to override the library's default styles */
+.gantt .bar-wrapper.bar-deliverable .bar {
+    width: 15px !important;
+}
+
+/* Hide the progress bar and resize handles for deliverables */
+.gantt .bar-deliverable .bar-progress,
+.gantt .bar-deliverable .handle-group {
+    display: none !important;
+}
+
+/* You can keep your other styles for WPs and Tasks */
+.bar-wp .bar {
+	fill: rgb(0, 88, 210) !important;
+}
+
+.bar-task .bar {
+	fill: #99d2bd !important;
 }
