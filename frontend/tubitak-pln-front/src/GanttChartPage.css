@@ -23,4 +23,31 @@
 	fill: #afcfc4 !important;
 }
 
+/* --- Add these rules to GanttChartPage.css --- */
 
+/* Target the main fill of the deliverable bar */
+.gantt .bar-deliverable .bar {
+    fill: #dc3545 !important; /* A bootstrap red color */
+    stroke: #dc3545 !important;
+}
+
+/* Make the bar very thin to look like a line/milestone */
+/* The !important tag is needed to override the library's default styles */
+.gantt .bar-wrapper.bar-deliverable .bar {
+    width: 5px !important;
+}
+
+/* Hide the progress bar and resize handles for deliverables */
+.gantt .bar-deliverable .bar-progress,
+.gantt .bar-deliverable .handle-group {
+    display: none !important;
+}
+
+/* You can keep your other styles for WPs and Tasks */
+.bar-wp .bar {
+	fill: rgb(0, 88, 210) !important;
+}
+
+.bar-task .bar {
+	fill: #99d2bd !important;
+}
