@@ -34,7 +34,7 @@
 /* Make the bar very thin to look like a line/milestone */
 /* The !important tag is needed to override the library's default styles */
 .gantt .bar-wrapper.bar-deliverable .bar {
-    width: 5px !important;
+    width: 15px !important;
 }
 
 /* Hide the progress bar and resize handles for deliverables */
