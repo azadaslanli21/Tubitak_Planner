@@ -36,10 +36,9 @@ export class GanttChartPage extends Component {
 			.then(p => this.setState({ projectStart: p.start_date || '' }, this.fetchData));
 	}
     
-    // --- 1. componentDidUpdate is now simplified (or can be removed if not needed for other things) ---
 	componentDidUpdate() {
-        // We no longer need the complex drawing logic here.
-        // This can be used for other purposes if needed in the future.
+        // This lifecycle method can be used for custom logic after the component updates.
+        // For now, it can remain simple as the Gantt library handles its own updates.
 	}
 
 	fetchData = () => {
@@ -64,9 +63,9 @@ export class GanttChartPage extends Component {
 
 	buildGanttData = () => {
     	const {
-        	projectStart, workPackages, tasks, deliverables, // Add deliverables back
+        	projectStart, workPackages, tasks, deliverables,
         	filterStatus, filterUser, filterWPs,
-        	showWorkPackages, showTasks, showDeliverables // Add showDeliverables back
+        	showWorkPackages, showTasks, showDeliverables
     	} = this.state;
     	if (!projectStart) return;
 
@@ -112,18 +111,17 @@ export class GanttChartPage extends Component {
             	});
         	}
             
-            // --- 2. Add this block to process deliverables ---
             if (showDeliverables && wpIdToBarId[wp.id]) {
                 deliverables.filter(d => d.work_package === wp.id).forEach(d => {
                     const deadline = pStart.add(d.deadline - 1, 'month');
                     if (this.inRange(deadline, deadline)) {
                         gantt.push({
                             id: `D-${d.id}`,
-                            name: `DEL: ${d.name}`,
+                            name: d.name, // "DEL:" prefix removed
                             start: deadline.format('YYYY-MM-DD'),
-                            end: deadline.format('YYYY-MM-DD'), // Start and end are the same for a milestone
+                            end: deadline.format('YYYY-MM-DD'),
                             parent: wpIdToBarId[d.work_package],
-                            custom_class: 'bar-deliverable', // Class for CSS styling
+                            custom_class: 'bar-deliverable',
                             progress: 100
                         });
                     }
@@ -136,10 +134,17 @@ export class GanttChartPage extends Component {
 
 	userMap = () => Object.fromEntries(this.state.users.map(u => [u.id, u.username || u.name]));
 
-	handleBarClick = (bar) => { /* ... same as before ... */ };
-	handleModalShow = () => { /* ... same as before ... */ };
-
-
+	handleBarClick = (bar) => {
+		const id = parseInt(bar.id.substring(bar.id.indexOf('-') + 1));
+		const type = bar.id.slice(0, 2);
+		let data;
+		if (type === 'WP') data = this.state.workPackages.find(w => w.id === id);
+		else if (type === 'T-') data = this.state.tasks.find(t => t.id === id);
+		else if (type === 'D-') data = this.state.deliverables.find(d => d.id === id);
+		this.setState({ infoItem: { type: type === 'D-' ? 'Deliverable' : (type === 'T-' ? 'Task' : 'WorkPackage'), data }, showInfo: true });
+	};
+	
+	handleModalShow = () => {};
 
 	render() {
 		const {
@@ -310,7 +315,7 @@ export class GanttChartPage extends Component {
 								id="showDeliverablesCheckbox"
 								label="Show Deliverables"
 								checked={showDeliverables}
-								onChange={e => this.setState({ showDeliverables: e.target.checked })}
+								onChange={e => this.setState({ showDeliverables: e.target.checked }, this.buildGanttData)}
 							/>
 						</div>
 					</Col>
@@ -345,7 +350,7 @@ export class GanttChartPage extends Component {
 										if (k === 'id') return null;
 										let val = v;
 										if (Array.isArray(v)) val = v.map(x => userMap[x.id ?? x] ?? x).join(', ');
-										if (typeof v === 'number' && (k === 'user' || k === 'owner')) val = userMap[v] ?? v;
+										if (typeof v === 'number' && (k === 'user' || k === 'owner' || k === 'work_package')) val = workPackages.find(wp => wp.id === v)?.name || userMap[v] || v;
 										return (<tr key={k}><th>{k}</th><td>{val}</td></tr>);
 									})}
 								</tbody>
