@@ -63,7 +63,7 @@ export class BudgetPage extends Component {
       value === '' ? delete next[k] : (next[k] = num);
 
       if (!this.validateSum(next, month, userId)) {
-        return { showAlert: `User total in month ${month} exceeds 1.0`, alertVariant: 'danger' };
+        return { showAlert: `Personnel total in month ${month} exceeds 1.0`, alertVariant: 'danger' };
       }
       return { contrib: next, showAlert: null };
     });
@@ -85,7 +85,7 @@ export class BudgetPage extends Component {
         next[this.key(wpId, userId, m)] = num;
         if (!this.validateSum(next, m, userId)) {
           return {
-            showAlert: `Propagation stopped; user total in month ${m} exceeds 1.0`,
+            showAlert: `Propagation stopped; Personnel total in month ${m} exceeds 1.0`,
             alertVariant: 'danger',
           };
         }
@@ -137,7 +137,7 @@ export class BudgetPage extends Component {
     return (
       <tr>
         <th>WorkPackage</th>
-        <th>User</th>
+        <th>Personnel</th>
         {range(1, maxMonth).map((m) => (
           <th key={m} className="budget-month-header">
             {projectStart ? dayjs(projectStart).add(m - 1, 'month').format('MMM YY') : m} ({m})
@@ -236,7 +236,7 @@ export class BudgetPage extends Component {
             <Table bordered size="sm" responsive>
               <thead>
                 <tr>
-                  <th>User</th>
+                  <th>Personnel</th>
                   <th>Total</th>
                 </tr>
               </thead>

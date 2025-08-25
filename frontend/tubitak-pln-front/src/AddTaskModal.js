@@ -76,7 +76,7 @@ export class AddTaskModal extends Component {
                 </Form.Group>
 
                 <Form.Group controlId="users">
-                  <Form.Label>Users</Form.Label>
+                  <Form.Label>Personnels</Form.Label>
                   <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ced4da', borderRadius: 4, padding: '0.5rem' }}>
                     {/* Only show users that are part of the parent work package */}
                     {wpUsers && wpUsers.map(userId => (
