@@ -1,6 +1,8 @@
 // GanttChartPage.js
 import React, { Component, createRef } from 'react';
 import { Container, Row, Col, Form, Modal, Table, Button } from 'react-bootstrap';
+import apiClient from './api';
+import { toast } from 'react-toastify';
 import { FrappeGantt } from 'frappe-gantt-react';
 import dayjs from 'dayjs';
 
@@ -31,9 +33,9 @@ export class GanttChartPage extends Component {
 	}
 
 	componentDidMount() {
-		fetch(process.env.REACT_APP_API + 'projects/' + localStorage.getItem('project_id'))
-			.then(r => (r.ok ? r.json() : { start_date: '' }))
-			.then(p => this.setState({ projectStart: p.start_date || '' }, this.fetchData));
+		apiClient.get('projects/' + localStorage.getItem('project_id'))
+			.then(res => this.setState({ projectStart: res.data.start_date || '' }, this.fetchData))
+			.catch(() => this.setState({ projectStart: '' }, this.fetchData));
 	}
     
 	componentDidUpdate() {
@@ -43,12 +45,18 @@ export class GanttChartPage extends Component {
 
 	fetchData = () => {
 		Promise.all([
-			fetch(process.env.REACT_APP_API + 'workpackages').then(r => r.json()),
-			fetch(process.env.REACT_APP_API + 'tasks').then(r => r.json()),
-			fetch(process.env.REACT_APP_API + 'users').then(r => r.json()),
-			fetch(process.env.REACT_APP_API + 'deliverables').then(r => r.json())
+			apiClient.get('workpackages/'),
+			apiClient.get('tasks/'),
+			apiClient.get('users/'),
+			apiClient.get('deliverables/')
 		]).then(([wps, tasks, users, deliverables]) =>
-			this.setState({ workPackages: wps, tasks, users, deliverables }, this.buildGanttData)
+			// apiClient returns data in the .data property
+			this.setState({ 
+				workPackages: wps.data, 
+				tasks: tasks.data, 
+				users: users.data, 
+				deliverables: deliverables.data 
+			}, this.buildGanttData)
 		);
 	};
 
@@ -60,6 +68,91 @@ export class GanttChartPage extends Component {
 		if (rangeTo && s.isAfter(rangeTo)) return false;
 		return true;
 	};
+
+
+	handleDateChange = async (task, start, end) => {
+    const { projectStart, workPackages, tasks, deliverables } = this.state;
+    if (!projectStart) {
+        toast.error("Project start date is not set. Cannot save changes.");
+        return;
+    }
+
+    const id = parseInt(task.id.substring(task.id.indexOf('-') + 1));
+    const type = task.id.slice(0, 2);
+
+    const pStart = dayjs(projectStart);
+    const newStartMonth = dayjs(start).diff(pStart, 'month') + 1;
+    const newEndMonth = dayjs(end).diff(pStart, 'month') + 1;
+
+    // ================= VALIDATION LOGIC =================
+    if (type === 'T-' || type === 'D-') {
+        const item = (type === 'T-')
+            ? tasks.find(t => t.id === id)
+            : deliverables.find(d => d.id === id);
+
+        if (!item) {
+            toast.error("Validation failed: Could not find the original item.");
+            this.fetchData(); // Revert visual change
+            return;
+        }
+
+        const parentWp = workPackages.find(wp => wp.id === item.work_package);
+
+        if (!parentWp) {
+            toast.error("Validation failed: Could not find the parent Work Package.");
+            this.fetchData(); // Revert visual change
+            return;
+        }
+
+        const wpStartMonth = parentWp.start_date;
+        const wpEndMonth = parentWp.end_date;
+        let isInvalid = false;
+        let errorMessage = "";
+
+        if (type === 'T-') {
+            if (newStartMonth < wpStartMonth || newEndMonth > wpEndMonth) {
+                isInvalid = true;
+                errorMessage = "Task dates cannot be outside the parent Work Package's range.";
+            }
+        } else { // type === 'D-'
+            if (newStartMonth < wpStartMonth || newStartMonth > wpEndMonth) {
+                isInvalid = true;
+                errorMessage = "Deliverable deadline must be within the parent Work Package's range.";
+            }
+        }
+
+        if (isInvalid) {
+            toast.error(errorMessage);
+            this.fetchData(); // Revert the visual change on the chart
+            return; // Stop execution and do not call the API
+        }
+    }
+    // ================= VALIDATION LOGIC =================
+
+    let endpoint = '';
+    let payload = {};
+
+    if (type === 'WP') {
+        endpoint = `workpackages/${id}/`;
+        payload = { start_date: newStartMonth, end_date: newEndMonth };
+    } else if (type === 'T-') {
+        endpoint = `tasks/${id}/`;
+        payload = { start_date: newStartMonth, end_date: newEndMonth };
+    } else if (type === 'D-') {
+        endpoint = `deliverables/${id}/`;
+        payload = { deadline: newStartMonth };
+    } else {
+        return;
+    }
+
+    try {
+        await apiClient.patch(endpoint, payload);
+        this.fetchData();
+    } catch (error) {
+        this.fetchData();
+    }
+};
+
 
 	buildGanttData = () => {
     	const {
@@ -328,6 +421,7 @@ export class GanttChartPage extends Component {
 						viewMode="Month"
 						listCellWidth="220px"
 						onClick={this.handleBarClick}
+						onDateChange={this.handleDateChange}
 					/>
 				)}
 

@@ -157,6 +157,19 @@ def workPackageApi(request, id=0):
             return JsonResponse({"message": "WorkPackage updated successfully!"}, safe=False)
         return JsonResponse({"error": "Failed to update work package."}, status=400)
 
+    elif request.method == 'PATCH':
+        work_package_data = JSONParser().parse(request)
+        try:
+            work_package = WorkPackage.objects.get(id=id, project=project)
+        except WorkPackage.DoesNotExist:
+            return JsonResponse({"error": "WorkPackage not found."}, status=404)
+
+        work_package_serializer = WorkPackageSerializer(work_package, data=work_package_data, partial=True) # Use partial=True
+        if work_package_serializer.is_valid():
+            work_package_serializer.save()
+            return JsonResponse({"message": "WorkPackage updated successfully!"}, safe=False)
+        return JsonResponse({"error": "Failed to update work package."}, status=400)
+
     elif request.method == 'DELETE':
         try:
             work_package = WorkPackage.objects.get(id=id, project=project)
@@ -265,6 +278,20 @@ def taskApi(request, id=0):
             task_serializer.save()
             return JsonResponse({"message": "Task updated successfully!"}, safe=False)
         return JsonResponse({"error": "Failed to update task."}, status=400)
+    
+    elif request.method == 'PATCH':
+        task_data = JSONParser().parse(request)
+        try:
+            task = Task.objects.get(id=id, work_package__project=project)
+        except Task.DoesNotExist:
+            return JsonResponse({"error": "Task not found."}, status=404)
+        
+        task_serializer = TaskSerializer(task, data=task_data, partial=True) # Use partial=True
+        if task_serializer.is_valid():
+            task_serializer.save()
+            return JsonResponse({"message": "Task updated successfully!"}, safe=False)
+        return JsonResponse({"error": "Failed to update task."}, status=400)
+
 
     elif request.method == 'DELETE':
         try:
@@ -395,6 +422,20 @@ def deliverableApi(request, id=0):
             deliverable_serializer.save()
             return JsonResponse({"message": "Deliverable updated successfully!"}, safe=False)
         return JsonResponse({"error": "Failed to update deliverable."}, status=400)
+    
+    elif request.method == 'PATCH':
+        deliverable_data = JSONParser().parse(request)
+        try:
+            deliverable = Deliverable.objects.get(id=id, work_package__project=project)
+        except Deliverable.DoesNotExist:
+            return JsonResponse({"error": "Deliverable not found."}, status=404)
+
+        deliverable_serializer = DeliverableSerializer(deliverable, data=deliverable_data, partial=True) # Use partial=True
+        if deliverable_serializer.is_valid():
+            deliverable_serializer.save()
+            return JsonResponse({"message": "Deliverable updated successfully!"}, safe=False)
+        return JsonResponse({"error": "Failed to update deliverable."}, status=400)
+
 
     elif request.method == 'DELETE':
         try:

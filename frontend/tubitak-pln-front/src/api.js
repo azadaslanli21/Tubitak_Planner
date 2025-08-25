@@ -1,5 +1,3 @@
-// src/api.js
-
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -24,10 +22,17 @@ apiClient.interceptors.request.use(config => {
   return config;
 });
 
-// Upgraded Response Interceptor with Token Refresh Logic ---
+// Upgraded Response Interceptor with Token Refresh and Notification Logic ---
 apiClient.interceptors.response.use(
   (response) => {
-    // If the request was successful, just return the response
+    // Check if the request was a method that modifies data
+    const method = response.config.method.toUpperCase();
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      // If the server sends back a success message, display it
+      if (response.data && response.data.message) {
+        toast.success(response.data.message);
+      }
+    }
     return response;
   },
   async (error) => {
