@@ -73,7 +73,7 @@ export class EditWorkPackageModal extends Component {
                                     </Form.Group>
 
                                     <Form.Group controlId="users">
-                                        <Form.Label>Users</Form.Label>
+                                        <Form.Label>Personnels</Form.Label>
                                         <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ced4da', borderRadius: 4, padding: '0.5rem' }}>
                                             {allUserIds.map(userId => (
                                                 <Form.Check

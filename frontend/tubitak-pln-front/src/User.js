@@ -36,7 +36,7 @@ export class User extends Component {
   }
 
   deleteUser(userid) {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    if (window.confirm('Are you sure you want to delete this personnel?')) {
       fetch(process.env.REACT_APP_API + 'users/' + userid + '/', {
         method: 'DELETE',
         headers: {
@@ -109,7 +109,7 @@ export class User extends Component {
             variant="primary"
             onClick={() => this.setState({ addModalShow: true })}
           >
-            Add User
+            Add Personnel
           </Button>
 
           <AddUserModal

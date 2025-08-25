@@ -19,7 +19,7 @@ export class Navigation extends Component{
                     Home
                 </NavLink>
                 <NavLink className="d-inline p-2 bg-dark text-white" to="/user">
-                    User
+                    Personnels
                 </NavLink>
                 <NavLink className="d-inline p-2 bg-dark text-white" to="/project">
                     Project Management 

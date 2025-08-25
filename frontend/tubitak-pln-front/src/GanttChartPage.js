@@ -117,7 +117,7 @@ export class GanttChartPage extends Component {
                     if (this.inRange(deadline, deadline)) {
                         gantt.push({
                             id: `D-${d.id}`,
-                            name: d.name, // "DEL:" prefix removed
+                            name: d.name,
                             start: deadline.format('YYYY-MM-DD'),
                             end: deadline.format('YYYY-MM-DD'),
                             parent: wpIdToBarId[d.work_package],
@@ -185,7 +185,7 @@ export class GanttChartPage extends Component {
 
 					<Col sm={2}>
 						<Form.Group>
-							<Form.Label>Member</Form.Label>
+							<Form.Label>Personnel</Form.Label>
 							<div style={{ border: '1px solid #ced4da', borderRadius: 4, maxHeight: 150, overflowY: 'auto', padding: '0.5rem' }}>
 								<Form.Check
 									type="checkbox"
@@ -348,10 +348,19 @@ export class GanttChartPage extends Component {
 								<tbody>
 									{Object.entries(infoItem.data).map(([k, v]) => {
 										if (k === 'id') return null;
+
+										let label = k; // Default label is the key itself
+                						if (k === 'users' || k === 'user' || k === 'owner') {
+                    						label = 'Personnel';
+                						} else {
+                						    // This part cleans up other keys, e.g., "work_package" -> "Work Package"
+                 						   label = k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                						}
+
 										let val = v;
 										if (Array.isArray(v)) val = v.map(x => userMap[x.id ?? x] ?? x).join(', ');
 										if (typeof v === 'number' && (k === 'user' || k === 'owner' || k === 'work_package')) val = workPackages.find(wp => wp.id === v)?.name || userMap[v] || v;
-										return (<tr key={k}><th>{k}</th><td>{val}</td></tr>);
+										return (<tr key={k}><th>{label}</th><td>{val}</td></tr>);
 									})}
 								</tbody>
 							</Table>

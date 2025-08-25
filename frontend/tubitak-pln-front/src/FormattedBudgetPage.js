@@ -131,7 +131,7 @@ export class FormattedBudgetPage extends Component {
           {selectedWP && (
             <Col sm={4}>
               <Form.Group>
-                <Form.Label>Select User</Form.Label>
+                <Form.Label>Select Personnel</Form.Label>
                 <Form.Control
                   as="select"
                   value={selectedUser}
@@ -169,11 +169,11 @@ export class FormattedBudgetPage extends Component {
         })}
 
         {/* NEW Matrix table ------------------------------------------- */}
-        <h4 className="mt-4">Work-Package × User Contribution (PM)</h4>
+        <h4 className="mt-4">Work-Package × Personnel Contribution (PM)</h4>
         <Table bordered size="sm" responsive>
           <thead>
             <tr>
-              <th>WP // User</th>
+              <th>WP // Personnel</th>
               {allUserIds.map(uid => (
                 <th key={uid}>{this.userById(uid)?.username || this.userById(uid)?.name || uid}</th>
               ))}
@@ -193,7 +193,7 @@ export class FormattedBudgetPage extends Component {
           </tbody>
           <tfoot>
             <tr>
-              <th>Total (User)</th>
+              <th>Total (Personnel)</th>
               {allUserIds.map(uid => (
                 <th key={uid}>{(colTotals[uid] || 0).toFixed(2)}</th>
               ))}
